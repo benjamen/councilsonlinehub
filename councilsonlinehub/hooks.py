@@ -5,10 +5,16 @@ app_description = "Hub site for CouncilsOnline NZ agent network"
 app_email = "dev@councilsonline.co.nz"
 app_license = "mit"
 
-# Apps
-# ------------------
+# Fixtures
+fixtures = [
+	# NZ Keycloak Social Login Key (hub uses NZ realm)
+	"councilsonlinehub.fixtures.social_login_key_nz",
+]
 
-# required_apps = []
+# Override Keycloak SSO to run NZ attribute sync on login
+override_whitelisted_methods = {
+	"frappe.integrations.oauth2_logins.login_via_keycloak": "councilsonlinehub.api.sso.login_via_keycloak",
+}
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [

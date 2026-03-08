@@ -1,0 +1,21 @@
+[
+  {
+    "doctype": "Social Login Key",
+    "name": "keycloak-nz",
+    "provider_name": "Keycloak NZ",
+    "social_login_provider": "Keycloak",
+    "enable_social_login": 1,
+    "custom_base_url": 1,
+    "base_url": "https://login.councilsonline.com/realms/councilsonline-nz",
+    "authorize_url": "/protocol/openid-connect/auth",
+    "access_token_url": "/protocol/openid-connect/token",
+    "api_endpoint": "/protocol/openid-connect/userinfo",
+    "redirect_url": "/api/method/frappe.integrations.oauth2_logins.login_via_keycloak",
+    "client_id": "councilsonline-nz-app",
+    "client_secret": "o4dzo347a3hKf7NoaKHAotGUBSCoVy4f",
+    "user_id_property": "email",
+    "auth_url_data": "{\"response_type\": \"code\", \"scope\": \"openid email profile\"}",
+    "sign_ups": "Allow",
+    "icon": "fa fa-key"
+  }
+]

@@ -1,0 +1,225 @@
+{
+ "actions": [],
+ "autoname": "field:user",
+ "creation": "2026-02-15 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "identity_section",
+  "user",
+  "display_name",
+  "profile_image",
+  "column_break_identity",
+  "is_listed",
+  "status",
+  "professional_section",
+  "business_type",
+  "company_name",
+  "bio",
+  "column_break_professional",
+  "years_experience",
+  "contact_email",
+  "contact_phone",
+  "website",
+  "services_section",
+  "services",
+  "areas_section",
+  "areas",
+  "statistics_section",
+  "total_applications",
+  "column_break_stats",
+  "average_rating",
+  "total_reviews"
+ ],
+ "fields": [
+  {
+   "fieldname": "identity_section",
+   "fieldtype": "Section Break",
+   "label": "Identity"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "display_name",
+   "fieldtype": "Data",
+   "label": "Display Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "profile_image",
+   "fieldtype": "Attach Image",
+   "label": "Profile Image"
+  },
+  {
+   "fieldname": "column_break_identity",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "Visible in the agent marketplace",
+   "fieldname": "is_listed",
+   "fieldtype": "Check",
+   "label": "Listed in Marketplace"
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nSuspended\nDeactivated"
+  },
+  {
+   "fieldname": "professional_section",
+   "fieldtype": "Section Break",
+   "label": "Professional Details"
+  },
+  {
+   "fieldname": "business_type",
+   "fieldtype": "Select",
+   "label": "Business Type",
+   "options": "\nSole Trader\nLimited Company\nPartnership\nOther"
+  },
+  {
+   "depends_on": "eval:doc.business_type==='Limited Company' || doc.business_type==='Partnership'",
+   "fieldname": "company_name",
+   "fieldtype": "Data",
+   "label": "Company Name"
+  },
+  {
+   "description": "Brief description for marketplace listing (max 500 characters)",
+   "fieldname": "bio",
+   "fieldtype": "Small Text",
+   "label": "Bio"
+  },
+  {
+   "fieldname": "column_break_professional",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "years_experience",
+   "fieldtype": "Int",
+   "label": "Years of Experience"
+  },
+  {
+   "fieldname": "contact_email",
+   "fieldtype": "Data",
+   "label": "Contact Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "contact_phone",
+   "fieldtype": "Data",
+   "label": "Contact Phone",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "website",
+   "fieldtype": "Data",
+   "label": "Website",
+   "options": "URL"
+  },
+  {
+   "fieldname": "services_section",
+   "fieldtype": "Section Break",
+   "label": "Services"
+  },
+  {
+   "fieldname": "services",
+   "fieldtype": "Table",
+   "label": "Services",
+   "options": "Agent Service"
+  },
+  {
+   "fieldname": "areas_section",
+   "fieldtype": "Section Break",
+   "label": "Areas Served"
+  },
+  {
+   "fieldname": "areas",
+   "fieldtype": "Table",
+   "label": "Areas",
+   "options": "Agent Area"
+  },
+  {
+   "fieldname": "statistics_section",
+   "fieldtype": "Section Break",
+   "label": "Statistics"
+  },
+  {
+   "default": "0",
+   "fieldname": "total_applications",
+   "fieldtype": "Int",
+   "label": "Total Applications",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_stats",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "average_rating",
+   "fieldtype": "Float",
+   "label": "Average Rating",
+   "precision": "1",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "total_reviews",
+   "fieldtype": "Int",
+   "label": "Total Reviews",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-15 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Councilsonlinehub",
+ "name": "Agent Profile",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Agent",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Applicant"
+  },
+  {
+   "read": 1,
+   "role": "Website User"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
