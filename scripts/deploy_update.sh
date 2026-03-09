@@ -45,32 +45,57 @@ sudo rm -rf "$FRONTEND_DIR/.turbo" 2>/dev/null || true
 sudo chown -R frappe-user:frappe-user "$FRONTEND_DIR" 2>/dev/null || true
 
 # Run yarn explicitly as the `frappe-user` to avoid creating root-owned files.
-echo "==> Installing frontend dependencies (attempt 1: as frappe-user)..."
-if sudo -H -u frappe-user bash -lc "cd '$FRONTEND_DIR' && yarn install --network-timeout 100000"; then
-  echo "yarn install succeeded as frappe-user"
-else
-  echo "yarn install failed as frappe-user; retrying as root with unsafe-perm..."
-  # Retry as root with unsafe-perm to allow scripts to run and create binaries.
-  if sudo -H bash -lc "cd '$FRONTEND_DIR' && npm_config_unsafe_perm=true yarn install --network-timeout 100000"; then
-    echo "yarn install succeeded as root (unsafe-perm)"
-    # Ensure correct ownership
-    sudo chown -R frappe-user:frappe-user "$FRONTEND_DIR" 2>/dev/null || true
+echo "==> Installing frontend dependencies..."
+# Check if non-interactive sudo is available. If so, we can perform sudo operations.
+if sudo -n true 2>/dev/null; then
+  echo "non-interactive sudo available — performing cleanup and install with sudo where needed"
+  sudo rm -rf "$FRONTEND_DIR/node_modules" 2>/dev/null || true
+  sudo rm -rf "$FRONTEND_DIR/.turbo" 2>/dev/null || true
+  sudo chown -R frappe-user:frappe-user "$FRONTEND_DIR" 2>/dev/null || true
+
+  # Run yarn as frappe-user (sudo -u) to avoid root-owned files
+  if sudo -H -u frappe-user bash -lc "cd '$FRONTEND_DIR' && yarn install --network-timeout 100000"; then
+    echo "yarn install succeeded as frappe-user"
   else
-    echo "ERROR: yarn install failed (both as frappe-user and as root)." >&2
+    echo "yarn install failed as frappe-user; retrying as root with unsafe-perm..."
+    if sudo -H bash -lc "cd '$FRONTEND_DIR' && npm_config_unsafe_perm=true yarn install --network-timeout 100000"; then
+      echo "yarn install succeeded as root (unsafe-perm)"
+      sudo chown -R frappe-user:frappe-user "$FRONTEND_DIR" 2>/dev/null || true
+    else
+      echo "ERROR: yarn install failed (both as frappe-user and as root)." >&2
+      exit 1
+    fi
+  fi
+
+  echo "==> Building frontend (as frappe-user)..."
+  if sudo -H -u frappe-user bash -lc "cd '$FRONTEND_DIR' && VITE_BUILD_TIME=$(date +%s) yarn build"; then
+    echo "frontend build succeeded"
+  else
+    echo "Build failed when running as frappe-user; attempting as root (unsafe-perm)..."
+    if sudo -H bash -lc "cd '$FRONTEND_DIR' && VITE_BUILD_TIME=$(date +%s) npm_config_unsafe_perm=true yarn build"; then
+      echo "frontend build succeeded as root"
+      sudo chown -R frappe-user:frappe-user "$FRONTEND_DIR" 2>/dev/null || true
+    else
+      echo "ERROR: frontend build failed (both as frappe-user and as root)." >&2
+      exit 1
+    fi
+  fi
+else
+  echo "non-interactive sudo NOT available — falling back to per-project modules install"
+  # Create a writable modules folder in the frontend directory and install there.
+  mkdir -p "$FRONTEND_DIR/.node_modules_tmp"
+  if cd "$FRONTEND_DIR" && yarn install --modules-folder ./.node_modules_tmp --network-timeout 100000; then
+    echo "yarn install succeeded into .node_modules_tmp"
+  else
+    echo "ERROR: yarn install into .node_modules_tmp failed." >&2
     exit 1
   fi
-fi
 
-echo "==> Building frontend (as frappe-user)..."
-if sudo -H -u frappe-user bash -lc "cd '$FRONTEND_DIR' && VITE_BUILD_TIME=$(date +%s) yarn build"; then
-  echo "frontend build succeeded"
-else
-  echo "Build failed when running as frappe-user; attempting as root (unsafe-perm)..."
-  if sudo -H bash -lc "cd '$FRONTEND_DIR' && VITE_BUILD_TIME=$(date +%s) npm_config_unsafe_perm=true yarn build"; then
-    echo "frontend build succeeded as root"
-    sudo chown -R frappe-user:frappe-user "$FRONTEND_DIR" 2>/dev/null || true
+  echo "==> Building frontend using .node_modules_tmp (NODE_PATH)..."
+  if cd "$FRONTEND_DIR" && NODE_PATH=./.node_modules_tmp VITE_BUILD_TIME=$(date +%s) yarn build; then
+    echo "frontend build succeeded using .node_modules_tmp"
   else
-    echo "ERROR: frontend build failed (both as frappe-user and as root)." >&2
+    echo "ERROR: frontend build failed using .node_modules_tmp." >&2
     exit 1
   fi
 fi
