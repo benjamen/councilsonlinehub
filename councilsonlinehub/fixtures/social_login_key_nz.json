@@ -10,7 +10,7 @@
     "authorize_url": "/protocol/openid-connect/auth",
     "access_token_url": "/protocol/openid-connect/token",
     "api_endpoint": "/protocol/openid-connect/userinfo",
-    "redirect_url": "/api/method/frappe.integrations.oauth2_logins.login_via_keycloak",
+    "redirect_url": "/api/method/frappe.integrations.oauth2_logins.custom/keycloak-nz",
     "client_id": "councilsonline-nz-app",
     "client_secret": "o4dzo347a3hKf7NoaKHAotGUBSCoVy4f",
     "user_id_property": "email",
