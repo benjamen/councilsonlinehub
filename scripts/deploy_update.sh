@@ -31,7 +31,11 @@ cd "$BENCH_PATH/apps/$HUB_APP/frontend"
 # Clean node_modules (may be owned by different user — use sudo if needed)
 sudo rm -rf node_modules 2>/dev/null || rm -rf node_modules 2>/dev/null || true
 rm -rf node_modules.bak.* 2>/dev/null || true
-yarn install
+# Ensure frontend directory ownership is correct so yarn can write node_modules.
+# Some CI runs or previous commands may create root-owned files; fix ownership
+# before running package install.
+sudo chown -R frappe-user:frappe-user "$BENCH_PATH/apps/$HUB_APP/frontend" 2>/dev/null || true
+yarn install --network-timeout 100000
 VITE_BUILD_TIME=$(date +%s) yarn build
 
 echo "==> Clearing Python bytecode..."
