@@ -5,23 +5,37 @@ set -euo pipefail
 BENCH_PATH="/home/frappe-user/frappe-bench"
 SITE_NAME="portal.councilsonline.com"
 HUB_APP="councilsonlinehub"
+HUB_REPO="https://github.com/benjamen/councilsonlinehub.git"
 
 export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519_benja_repo -o StrictHostKeyChecking=no"
 git config --global --add safe.directory "$BENCH_PATH/apps/$HUB_APP"
 
 echo "==> Pulling $HUB_APP (main)..."
 cd "$BENCH_PATH/apps/$HUB_APP"
-git fetch origin main && git reset --hard origin/main && git clean -fd
+
+# Ensure origin points to GitHub
+if ! git remote get-url origin &>/dev/null; then
+  echo "Adding origin remote..."
+  git remote add origin "$HUB_REPO"
+fi
+# Re-set origin in case it's pointing somewhere wrong
+git remote set-url origin "$HUB_REPO"
+
+git fetch origin main
+git reset --hard origin/main
+git clean -fd
 git log -1 --oneline
 
 echo "==> Building hub standalone frontend..."
 cd "$BENCH_PATH/apps/$HUB_APP/frontend"
+# Clean node_modules (may be owned by different user — use sudo if needed)
+sudo rm -rf node_modules 2>/dev/null || rm -rf node_modules 2>/dev/null || true
 rm -rf node_modules.bak.* 2>/dev/null || true
-yarn install --frozen-lockfile
+yarn install
 VITE_BUILD_TIME=$(date +%s) yarn build
 
 echo "==> Clearing Python bytecode..."
-find "$BENCH_PATH/apps/$HUB_APP" -name '*.pyc' -delete
+find "$BENCH_PATH/apps/$HUB_APP" -name '*.pyc' -delete 2>/dev/null || true
 find "$BENCH_PATH/apps/$HUB_APP" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
 
 echo "==> Migrating..."
