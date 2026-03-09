@@ -26,9 +26,8 @@ git log -1 --oneline
 FRONTEND="$BENCH_PATH/apps/$HUB_APP/frontend"
 echo "==> Building frontend..."
 
-# Fix ownership if node_modules was created by a different user (e.g. root)
-sudo chown -R frappe-user:frappe-user "$FRONTEND" 2>/dev/null || true
-rm -rf "$FRONTEND/node_modules"
+# Fix ownership and remove node_modules (may be root-owned from initial deploy)
+sudo rm -rf "$FRONTEND/node_modules" 2>/dev/null || rm -rf "$FRONTEND/node_modules"
 
 cd "$FRONTEND"
 yarn install
