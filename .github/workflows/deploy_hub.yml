@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  SERVER_HOST: ${{ secrets.TAYTAY_SERVER_HOST }}
-  SERVER_USER: ${{ secrets.TAYTAY_SERVER_USER }}
+  SERVER_HOST: 77.37.87.141
+  SERVER_USER: frappe-user
   BENCH_PATH: /home/frappe-user/frappe-bench
   SITE_NAME: portal.councilsonline.com
   HUB_APP: councilsonlinehub
@@ -43,21 +43,13 @@ jobs:
           chmod 600 ~/.ssh/config
           ssh-keyscan -H ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
           echo "Testing SSH connection..."
-          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 \
-            ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} \
-            "echo 'SSH OK'; hostname"
+          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} "echo SSH OK; hostname"
 
       - name: Copy deploy script to server
-        run: |
-          scp -i ~/.ssh/deploy_key \
-            scripts/deploy_update.sh \
-            ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:/tmp/hub_deploy_update.sh
+        run: scp -i ~/.ssh/deploy_key scripts/deploy_update.sh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:/tmp/hub_deploy_update.sh
 
       - name: Run deploy script on server
-        run: |
-          ssh -i ~/.ssh/deploy_key \
-            ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} \
-            "chmod +x /tmp/hub_deploy_update.sh && bash /tmp/hub_deploy_update.sh"
+        run: ssh -i ~/.ssh/deploy_key ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} "chmod +x /tmp/hub_deploy_update.sh && bash /tmp/hub_deploy_update.sh"
 
       - name: Post-Deployment Verification
         run: |
