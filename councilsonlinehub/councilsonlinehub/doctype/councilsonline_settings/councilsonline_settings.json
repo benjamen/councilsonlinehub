@@ -4,25 +4,11 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "hub_section",
-  "site_mode",
   "hub_service_token",
   "council_registry_section",
   "council_registry"
  ],
  "fields": [
-  {
-   "fieldname": "hub_section",
-   "fieldtype": "Section Break",
-   "label": "Hub Settings"
-  },
-  {
-   "default": "hub",
-   "fieldname": "site_mode",
-   "fieldtype": "Select",
-   "label": "Site Mode",
-   "options": "hub\ncouncil"
-  },
   {
    "fieldname": "hub_service_token",
    "fieldtype": "Password",

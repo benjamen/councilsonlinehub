@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test"
 /**
  * Hub pages smoke test
  * Tests navigation to hub pages and verifies they render correctly.
- * Site is configured with site_mode = "hub".
+ * Site runs the councilsonlinehub app (presence of the app makes it the hub).
  */
 
 const BASE = process.env.BASE_URL || "http://localhost:8092"

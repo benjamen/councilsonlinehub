@@ -1,7 +1,7 @@
 """
 CouncilsOnline Agent Hub API
 
-Runs on the hub site (portal.councilsonline.co.nz, site_mode = "hub").
+Runs on the hub site (portal.councilsonline.co.nz).
 Provides:
   - Agent profile read/write (canonical store for address + specialties)
   - Cross-council request aggregation
@@ -15,15 +15,6 @@ from frappe import _
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
-
-def _require_hub_mode():
-    settings = frappe.get_single("CouncilsOnline Settings")
-    # Treat None/empty as "hub" — councilsonlinehub is only installed on hub sites.
-    # getattr default only fires when the attribute is missing, not when it's "".
-    mode = (getattr(settings, "site_mode", None) or "hub")
-    if mode != "hub":
-        frappe.throw(_("This endpoint is only available on the hub site"), frappe.PermissionError)
-
 
 def _validate_service_token(token):
     settings = frappe.get_single("CouncilsOnline Settings")
@@ -39,7 +30,6 @@ def _validate_service_token(token):
 @frappe.whitelist()
 def get_hub_profile():
     """Agent fetches their own canonical profile from the hub."""
-    _require_hub_mode()
     user = frappe.session.user
     if user in ("Guest", "Administrator"):
         frappe.throw(_("You must be logged in"), frappe.PermissionError)
@@ -105,7 +95,6 @@ def save_hub_profile(
     specialties=None, directors=None, authorising_officer=None,
 ):
     """Agent saves canonical profile on the hub."""
-    _require_hub_mode()
     # Delegate to auth.save_registration_profile which handles all the logic
     from councilsonline.api.auth import save_registration_profile
     return save_registration_profile(
@@ -131,7 +120,6 @@ def get_agent_profile_for_council(agent_email=None, service_token=None):
     Called by council sites on first agent login to fetch canonical profile.
     Returns address, specialties, directors, authorising_officer.
     """
-    _require_hub_mode()
     _validate_service_token(service_token)
 
     if not agent_email:
@@ -189,7 +177,6 @@ def aggregate_requests():
     Hub aggregator: calls get_council_agent_requests on each active council
     in the council_registry and merges results.
     """
-    _require_hub_mode()
     user = frappe.session.user
     if user in ("Guest", "Administrator"):
         frappe.throw(_("You must be logged in"), frappe.PermissionError)
@@ -230,7 +217,6 @@ def aggregate_requests():
 @frappe.whitelist()
 def get_council_registry():
     """Returns the list of councils registered on the hub."""
-    _require_hub_mode()
     settings = frappe.get_single("CouncilsOnline Settings")
     registry = getattr(settings, "council_registry", []) or []
     return [
@@ -345,7 +331,6 @@ def provision_on_council(council_code=None):
     """
     Hub: push current agent's canonical profile to a council site and return a one-time auto-login URL.
     """
-    _require_hub_mode()
     user = frappe.session.user
     if user in ("Guest", "Administrator"):
         frappe.throw(_("You must be logged in"), frappe.PermissionError)
@@ -404,7 +389,6 @@ def provision_on_council(council_code=None):
 @frappe.whitelist()
 def get_company_members():
     """Returns all hub users belonging to the same company as the logged-in agent."""
-    _require_hub_mode()
     user = frappe.session.user
     if user in ("Guest", "Administrator"):
         frappe.throw(_("You must be logged in"), frappe.PermissionError)
@@ -430,7 +414,6 @@ def get_company_members():
 @frappe.whitelist()
 def invite_company_member(email=None, first_name=None, last_name=None):
     """Invite a new staff member to join the agent's company on the hub."""
-    _require_hub_mode()
     inviter = frappe.session.user
     if inviter in ("Guest", "Administrator"):
         frappe.throw(_("You must be logged in"), frappe.PermissionError)

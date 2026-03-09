@@ -39,10 +39,9 @@ if [ ! -d "$BENCH_PATH/sites/$SITE_NAME" ]; then
     log "Site created"
 fi
 
-# Install app + set hub mode
+# Install app
 bench --site "$SITE_NAME" install-app "$HUB_APP" || warn "May already be installed"
-bench --site "$SITE_NAME" set-config site_mode hub
-log "App installed, hub mode set"
+log "App installed"
 
 # Build hub frontend (standalone)
 cd "$BENCH_PATH/apps/$HUB_APP/frontend"

@@ -64,20 +64,15 @@ test.describe.serial("Keycloak NZ Sync (_sync_from_hub — hub is master)", () =
 		await page.screenshot({ path: "playwright-report/hub/sync-0-setup.png" })
 	})
 
-	test("SETUP: Set site to hub mode + hub_api_url configured", async ({ page }) => {
+	test("SETUP: hub_api_url configured", async ({ page }) => {
 		await loginAdmin(page)
 		const r = await page.evaluate(async (baseUrl) => {
 			const r1 = await fetch("/api/method/frappe.client.set_value", {
 				method: "POST",
 				headers: { "Content-Type": "application/json", "X-Frappe-CSRF-Token": window.csrf_token || "" },
-				body: JSON.stringify({ doctype: "CouncilsOnline Settings", name: "CouncilsOnline Settings", fieldname: "site_mode", value: "hub" }),
-			})
-			const r2 = await fetch("/api/method/frappe.client.set_value", {
-				method: "POST",
-				headers: { "Content-Type": "application/json", "X-Frappe-CSRF-Token": window.csrf_token || "" },
 				body: JSON.stringify({ doctype: "CouncilsOnline Settings", name: "CouncilsOnline Settings", fieldname: "hub_api_url", value: baseUrl }),
 			})
-			return { r1: r1.status, r2: r2.status }
+			return { r1: r1.status }
 		}, BASE)
 		console.log("Settings update:", r)
 		await page.screenshot({ path: "playwright-report/hub/sync-1-settings.png" })
