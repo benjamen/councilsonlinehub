@@ -33,12 +33,14 @@ jobs:
           printf 'Host %s\n  IdentityFile ~/.ssh/deploy_key\n  StrictHostKeyChecking no\n  UserKnownHostsFile=/dev/null\n' "${{ env.SERVER_HOST }}" >> ~/.ssh/config
           chmod 600 ~/.ssh/config
           ssh-keyscan -H "${{ env.SERVER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
-          echo "Testing SSH connection..."
-          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 "${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}" "echo 'SSH OK'; hostname"
+          SERVER_USER=$(echo "${{ secrets.TAYTAY_SERVER_USER }}" | tr -d '[:space:]')
+          echo "Testing SSH connection as ${SERVER_USER}..."
+          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 -l "${SERVER_USER}" "${{ env.SERVER_HOST }}" "echo 'SSH OK'; hostname"
 
       - name: Deploy Hub to Production
         run: |
-          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'SSHEOF'
+          SERVER_USER=$(echo "${{ secrets.TAYTAY_SERVER_USER }}" | tr -d '[:space:]')
+          ssh -i ~/.ssh/deploy_key -l "${SERVER_USER}" "${{ env.SERVER_HOST }}" << 'SSHEOF'
             set -e
             BENCH_PATH="/home/frappe-user/frappe-bench"
             SITE_NAME="portal.councilsonline.com"
@@ -87,9 +89,10 @@ jobs:
           sleep 15
           SITE_URL="https://portal.councilsonline.com"
           echo -n "API ping... "
-          curl -f -s "$SITE_URL/api/method/ping" | grep -q pong && echo "OK" || echo "FAIL"
+          curl -fsk "$SITE_URL/api/method/ping" | grep -q pong && echo "OK" || echo "FAIL (check nginx/SSL)"
           echo -n "Frontend... "
-          curl -f -s -o /dev/null -w '%{http_code}' "$SITE_URL/frontend" | grep -q 200 && echo "OK" || echo "FAIL"
+          STATUS=$(curl -sk -o /dev/null -w '%{http_code}' "$SITE_URL/frontend")
+          echo "$STATUS" | grep -q "^[23]" && echo "OK ($STATUS)" || echo "FAIL ($STATUS)"
 
       - name: Deployment Summary
         if: always()
