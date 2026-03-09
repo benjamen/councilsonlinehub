@@ -107,6 +107,24 @@ else
   fi
 fi
 
+# Copy built frontend into the site's public directory so nginx/bench serves it at /frontend
+BUILT_FRONTEND_DIR="$BENCH_PATH/apps/$HUB_APP/councilsonlinehub/public/frontend"
+SITE_PUBLIC_DIR="$BENCH_PATH/sites/$SITE_NAME/public/frontend"
+if [ -d "$BUILT_FRONTEND_DIR" ]; then
+  echo "==> Deploying built frontend to site public folder: $SITE_PUBLIC_DIR"
+  sudo rm -rf "$SITE_PUBLIC_DIR" 2>/dev/null || true
+  sudo mkdir -p "$SITE_PUBLIC_DIR" 2>/dev/null || true
+  sudo cp -r "$BUILT_FRONTEND_DIR/." "$SITE_PUBLIC_DIR/"
+  sudo chown -R frappe-user:frappe-user "$SITE_PUBLIC_DIR" 2>/dev/null || true
+
+  # Ensure root URL redirects to /frontend by placing a simple index.html in site public
+  SITE_INDEX="$BENCH_PATH/sites/$SITE_NAME/public/index.html"
+  echo "<!doctype html><html><head><meta http-equiv=\"refresh\" content=\"0;url=/frontend\"></head><body></body></html>" | sudo tee "$SITE_INDEX" >/dev/null || true
+  sudo chown frappe-user:frappe-user "$SITE_INDEX" 2>/dev/null || true
+else
+  echo "WARNING: built frontend directory not found: $BUILT_FRONTEND_DIR"
+fi
+
 echo "==> Clearing Python bytecode..."
 find "$BENCH_PATH/apps/$HUB_APP" -name '*.pyc' -delete 2>/dev/null || true
 find "$BENCH_PATH/apps/$HUB_APP" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
