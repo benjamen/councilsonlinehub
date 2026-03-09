@@ -12,7 +12,6 @@ env:
   BENCH_PATH: /home/frappe-user/frappe-bench
   SITE_NAME: portal.councilsonline.com
   HUB_APP: councilsonlinehub
-  FRONTEND_APP: councilsonline
 
 concurrency:
   group: server-deploy-hub-${{ github.ref }}
@@ -57,22 +56,14 @@ jobs:
 
             export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519_benja_repo -o StrictHostKeyChecking=no"
             git config --global --add safe.directory "$BENCH_PATH/apps/$HUB_APP"
-            git config --global --add safe.directory "$BENCH_PATH/apps/$FRONTEND_APP"
 
             echo "Pulling $HUB_APP (main)..."
             cd "$BENCH_PATH/apps/$HUB_APP"
             git fetch origin main && git reset --hard origin/main && git clean -fd
             git log -1 --oneline
 
-            echo "Pulling $FRONTEND_APP (main)..."
-            cd "$BENCH_PATH/apps/$FRONTEND_APP"
-            git fetch origin main
-            git ls-files councilsonline/public/frontend/ | xargs git update-index --force-remove 2>/dev/null || true
-            git reset --hard origin/main && git clean -fd
-            git log -1 --oneline
-
-            echo "Building frontend..."
-            cd "$BENCH_PATH/apps/$FRONTEND_APP/frontend"
+            echo "Building hub standalone frontend..."
+            cd "$BENCH_PATH/apps/$HUB_APP/frontend"
             rm -rf node_modules 2>/dev/null || mv node_modules "node_modules.bak.$(date +%s)" 2>/dev/null || true
             rm -rf node_modules.bak.* 2>/dev/null || true
             yarn install --frozen-lockfile
@@ -80,7 +71,6 @@ jobs:
 
             echo "Clearing Python bytecode..."
             find "$BENCH_PATH/apps/$HUB_APP" -name '*.pyc' -delete
-            find "$BENCH_PATH/apps/$FRONTEND_APP" -name '*.pyc' -delete
             find "$BENCH_PATH/apps" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
 
             echo "Migrating..."
@@ -115,6 +105,6 @@ jobs:
         run: |
           echo "## Hub Deployment" >> $GITHUB_STEP_SUMMARY
           echo "- **Site:** https://portal.councilsonline.com" >> $GITHUB_STEP_SUMMARY
-          echo "- **Apps:** councilsonlinehub + councilsonline" >> $GITHUB_STEP_SUMMARY
+          echo "- **App:** councilsonlinehub (standalone)" >> $GITHUB_STEP_SUMMARY
           echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Time:** $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
