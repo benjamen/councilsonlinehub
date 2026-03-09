@@ -161,4 +161,42 @@ sudo supervisorctl reread && sudo supervisorctl update && sudo supervisorctl sta
 sleep 2
 sudo systemctl reload nginx
 
+echo "==> Finalizing: run post-deploy frontend build"
+if [ -d "$FRONTEND_DIR" ]; then
+  echo "==> Running post-deploy yarn build in $FRONTEND_DIR"
+  if sudo -n true 2>/dev/null; then
+    if sudo -H -u frappe-user bash -lc "cd '$FRONTEND_DIR' && yarn build"; then
+      echo "post-deploy frontend build succeeded (frappe-user)"
+    else
+      echo "post-deploy yarn build failed as frappe-user; retrying as root with unsafe-perm..."
+      if sudo -H bash -lc "cd '$FRONTEND_DIR' && npm_config_unsafe_perm=true yarn build"; then
+        echo "post-deploy frontend build succeeded as root"
+        sudo chown -R frappe-user:frappe-user "$FRONTEND_DIR" 2>/dev/null || true
+      else
+        echo "post-deploy build failed as root; attempting .node_modules_tmp fallback"
+        mkdir -p "$FRONTEND_DIR/.node_modules_tmp" 2>/dev/null || true
+        if cd "$FRONTEND_DIR" && NODE_PATH=./.node_modules_tmp yarn build; then
+          echo "post-deploy frontend build succeeded using .node_modules_tmp"
+        else
+          echo "WARNING: post-deploy frontend build failed (all fallbacks)" >&2
+        fi
+      fi
+    fi
+  else
+    # No passwordless sudo available — attempt local build and then fallback to .node_modules_tmp
+    if cd "$FRONTEND_DIR" && yarn build; then
+      echo "post-deploy frontend build succeeded (local)"
+    else
+      mkdir -p "$FRONTEND_DIR/.node_modules_tmp" 2>/dev/null || true
+      if cd "$FRONTEND_DIR" && NODE_PATH=./.node_modules_tmp yarn build; then
+        echo "post-deploy frontend build succeeded using .node_modules_tmp"
+      else
+        echo "WARNING: post-deploy frontend build failed (no sudo, fallbacks exhausted)" >&2
+      fi
+    fi
+  fi
+else
+  echo "post-deploy frontend dir not found: $FRONTEND_DIR"
+fi
+
 echo "==> Done: https://$SITE_NAME"
