@@ -26,10 +26,16 @@ git log -1 --oneline
 FRONTEND="$BENCH_PATH/apps/$HUB_APP/frontend"
 echo "==> Building frontend..."
 
-# Fix ownership and remove node_modules (may be root-owned from initial deploy)
-sudo rm -rf "$FRONTEND/node_modules" 2>/dev/null || rm -rf "$FRONTEND/node_modules"
-
 cd "$FRONTEND"
+
+# Remove node_modules — may be root-owned if initial install ran as root.
+# If removal fails, skip it (yarn install will overwrite/update in place).
+# ONE-TIME FIX if this keeps failing: SSH to server and run:
+#   sudo chown -R frappe-user:frappe-user ~/frappe-bench/apps/councilsonlinehub/frontend/
+if ! rm -rf node_modules 2>/dev/null; then
+  echo "WARNING: Could not remove node_modules (root-owned). Run on server: sudo chown -R frappe-user:frappe-user ~/frappe-bench/apps/councilsonlinehub/frontend/"
+fi
+
 yarn install
 yarn build
 
