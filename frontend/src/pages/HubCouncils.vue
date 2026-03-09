@@ -31,9 +31,7 @@
                 </span>
               </div>
               <p class="text-xs text-gray-400 mt-0.5 truncate">{{ c.api_url }}</p>
-              <p v-if="c.registered && c.application_count != null" class="text-xs text-gray-500 mt-1">
-                {{ c.application_count }} application{{ c.application_count !== 1 ? 's' : '' }} submitted
-              </p>
+
             </div>
 
             <div class="flex gap-2 flex-shrink-0">
@@ -101,26 +99,16 @@ async function registerWithCouncil(council) {
 
 async function loadCouncils() {
   try {
-    const [registry, requests] = await Promise.allSettled([
+    const [registry, memberships] = await Promise.allSettled([
       apiClient.call('councilsonlinehub.api.hub.get_council_registry'),
-      apiClient.call('councilsonlinehub.api.hub.aggregate_requests'),
+      apiClient.call('councilsonlinehub.api.hub.get_user_memberships'),
     ])
 
     const raw = registry.value || []
-    const reqs = requests.value || []
-
-    const countByCode = {}
-    reqs.forEach(r => {
-      if (r.council_code) countByCode[r.council_code] = (countByCode[r.council_code] || 0) + 1
-    })
-    const activeCodes = new Set(Object.keys(countByCode))
+    const memberCodes = new Set((memberships.value || []).map(m => m.council_code))
 
     councils.value = raw
-      .map(c => ({
-        ...c,
-        registered: activeCodes.has(c.council_code),
-        application_count: countByCode[c.council_code] ?? null,
-      }))
+      .map(c => ({ ...c, registered: memberCodes.has(c.council_code) }))
       .sort((a, b) => (b.registered ? 1 : 0) - (a.registered ? 1 : 0))
   } catch (e) {
     console.error(e)

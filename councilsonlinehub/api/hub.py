@@ -380,10 +380,40 @@ def provision_on_council(council_code=None):
 
     data = resp.json().get("message") or {}
     auto_login_path = data.get("auto_login_path") or "/frontend/"
+
+    # Record membership so the hub knows this user is registered on this council
+    membership_name = f"{user}-{council_code}"
+    if frappe.db.exists("Hub Council Membership", membership_name):
+        frappe.db.set_value("Hub Council Membership", membership_name, "is_active", 1)
+    else:
+        frappe.get_doc({
+            "doctype": "Hub Council Membership",
+            "name": membership_name,
+            "user": user,
+            "council_code": council_code,
+            "council_name": entry.council_name,
+            "provisioned_at": frappe.utils.now(),
+            "is_active": 1,
+        }).insert(ignore_permissions=True)
+    frappe.db.commit()
+
     return {
         "success": True,
         "auto_login_url": api_url + auto_login_path,
     }
+
+
+@frappe.whitelist()
+def get_user_memberships():
+    """Returns councils this user has been provisioned on."""
+    user = frappe.session.user
+    if user in ("Guest", "Administrator"):
+        return []
+    return frappe.get_all(
+        "Hub Council Membership",
+        filters={"user": user, "is_active": 1},
+        fields=["council_code", "council_name", "provisioned_at"],
+    )
 
 
 @frappe.whitelist()

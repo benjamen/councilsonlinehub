@@ -1,0 +1,70 @@
+{
+ "actions": [],
+ "autoname": "format:{user}-{council_code}",
+ "creation": "2026-03-10 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "council_code",
+  "council_name",
+  "provisioned_at",
+  "is_active"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "council_code",
+   "fieldtype": "Data",
+   "label": "Council Code",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "council_name",
+   "fieldtype": "Data",
+   "label": "Council Name",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "provisioned_at",
+   "fieldtype": "Datetime",
+   "label": "Provisioned At"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 0,
+ "links": [],
+ "modified": "2026-03-10 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Councilsonlinehub",
+ "name": "Hub Council Membership",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  }
+ ],
+ "sort_field": "provisioned_at",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "council_name",
+ "track_changes": 0
+}
