@@ -112,15 +112,31 @@ BUILT_FRONTEND_DIR="$BENCH_PATH/apps/$HUB_APP/councilsonlinehub/public/frontend"
 SITE_PUBLIC_DIR="$BENCH_PATH/sites/$SITE_NAME/public/frontend"
 if [ -d "$BUILT_FRONTEND_DIR" ]; then
   echo "==> Deploying built frontend to site public folder: $SITE_PUBLIC_DIR"
-  sudo rm -rf "$SITE_PUBLIC_DIR" 2>/dev/null || true
-  sudo mkdir -p "$SITE_PUBLIC_DIR" 2>/dev/null || true
-  sudo cp -r "$BUILT_FRONTEND_DIR/." "$SITE_PUBLIC_DIR/"
-  sudo chown -R frappe-user:frappe-user "$SITE_PUBLIC_DIR" 2>/dev/null || true
+  # Use sudo if available (passwordless); otherwise perform operations as the
+  # current user. The site public directory is normally under the frappe-user
+  # home so copying without sudo should work in most CI setups.
+  if sudo -n true 2>/dev/null; then
+    sudo rm -rf "$SITE_PUBLIC_DIR" 2>/dev/null || true
+    sudo mkdir -p "$SITE_PUBLIC_DIR" 2>/dev/null || true
+    sudo cp -r "$BUILT_FRONTEND_DIR/." "$SITE_PUBLIC_DIR/"
+    sudo chown -R frappe-user:frappe-user "$SITE_PUBLIC_DIR" 2>/dev/null || true
 
-  # Ensure root URL redirects to /frontend by placing a simple index.html in site public
-  SITE_INDEX="$BENCH_PATH/sites/$SITE_NAME/public/index.html"
-  echo "<!doctype html><html><head><meta http-equiv=\"refresh\" content=\"0;url=/frontend\"></head><body></body></html>" | sudo tee "$SITE_INDEX" >/dev/null || true
-  sudo chown frappe-user:frappe-user "$SITE_INDEX" 2>/dev/null || true
+    SITE_INDEX="$BENCH_PATH/sites/$SITE_NAME/public/index.html"
+    echo "<!doctype html><html><head><meta http-equiv=\"refresh\" content=\"0;url=/frontend\"></head><body></body></html>" | sudo tee "$SITE_INDEX" >/dev/null || true
+    sudo chown frappe-user:frappe-user "$SITE_INDEX" 2>/dev/null || true
+  else
+    rm -rf "$SITE_PUBLIC_DIR" 2>/dev/null || true
+    mkdir -p "$SITE_PUBLIC_DIR" 2>/dev/null || true
+    if cp -r "$BUILT_FRONTEND_DIR/." "$SITE_PUBLIC_DIR/"; then
+      echo "copied built frontend to $SITE_PUBLIC_DIR"
+    else
+      echo "WARNING: failed to copy built frontend to $SITE_PUBLIC_DIR (no sudo and cp failed)" >&2
+    fi
+
+    SITE_INDEX="$BENCH_PATH/sites/$SITE_NAME/public/index.html"
+    echo "<!doctype html><html><head><meta http-equiv=\"refresh\" content=\"0;url=/frontend\"></head><body></body></html>" > "$SITE_INDEX" 2>/dev/null || true
+    echo "created $SITE_INDEX"
+  fi
 else
   echo "WARNING: built frontend directory not found: $BUILT_FRONTEND_DIR"
 fi
