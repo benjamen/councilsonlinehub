@@ -45,14 +45,14 @@
               >
                 Open Portal
               </a>
-              <a
+              <button
                 v-else
-                :href="c.api_url + '/frontend/account/login'"
-                target="_blank"
-                class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                @click="registerWithCouncil(c)"
+                :disabled="registering === c.council_code"
+                class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                Register
-              </a>
+                {{ registering === c.council_code ? 'Registering…' : 'Register' }}
+              </button>
             </div>
           </div>
 
@@ -78,8 +78,28 @@ import { apiClient } from '@/services/api/base'
 
 const councils = ref([])
 const loading = ref(true)
+const registering = ref(null)
 
-onMounted(async () => {
+async function registerWithCouncil(council) {
+  registering.value = council.council_code
+  try {
+    const result = await apiClient.call(
+      'councilsonlinehub.api.hub.provision_on_council',
+      { council_code: council.council_code }
+    )
+    if (result && result.auto_login_url) {
+      window.open(result.auto_login_url, '_blank')
+      // Refresh after a short delay so the "Registered" badge appears
+      setTimeout(() => loadCouncils(), 2000)
+    }
+  } catch (e) {
+    console.error('Provision error:', e)
+    alert('Could not register with this council: ' + (e.message || 'Unknown error'))
+  }
+  registering.value = null
+}
+
+async function loadCouncils() {
   try {
     const [registry, requests] = await Promise.allSettled([
       apiClient.call('councilsonlinehub.api.hub.get_council_registry'),
@@ -106,5 +126,7 @@ onMounted(async () => {
     console.error(e)
   }
   loading.value = false
-})
+}
+
+onMounted(() => loadCouncils())
 </script>

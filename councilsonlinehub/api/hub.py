@@ -338,6 +338,67 @@ def test_apply_hub_data(target_email, hub_data_json):
 
 
 @frappe.whitelist()
+def provision_on_council(council_code=None):
+    """
+    Hub: push current agent's canonical profile to a council site and return a one-time auto-login URL.
+    """
+    _require_hub_mode()
+    user = frappe.session.user
+    if user in ("Guest", "Administrator"):
+        frappe.throw(_("You must be logged in"), frappe.PermissionError)
+
+    settings = frappe.get_single("CouncilsOnline Settings")
+    entry = next(
+        (e for e in (settings.council_registry or [])
+         if e.council_code == council_code and e.is_active),
+        None,
+    )
+    if not entry:
+        frappe.throw(_("Council not found in registry"))
+
+    api_url = (entry.api_url or "").rstrip("/")
+    token = settings.hub_service_token
+
+    # Build full profile (reuse existing service endpoint)
+    profile_data = get_agent_profile_for_council(agent_email=user, service_token=token)
+
+    # Augment with name + contact (get_agent_profile_for_council omits these)
+    if frappe.db.exists("User", user):
+        u = frappe.get_doc("User", user)
+        profile_data["first_name"] = u.first_name
+        profile_data["last_name"] = u.last_name
+        profile_data["phone"] = (
+            frappe.db.get_value("User Profile Extended", user, "phone") or u.phone or ""
+        )
+    if frappe.db.exists("User Profile Extended", user):
+        p = frappe.get_doc("User Profile Extended", user)
+        profile_data["company_name"] = p.company_name
+        profile_data["business_type"] = p.business_type
+        profile_data["user_role"] = p.user_role
+
+    import requests as req
+    try:
+        resp = req.post(
+            f"{api_url}/api/method/councilsonline.api.auth.provision_agent_from_hub",
+            json={"agent_email": user, "profile_data": profile_data, "service_token": token},
+            timeout=15,
+        )
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), f"Hub provision error: {entry.council_name}")
+        frappe.throw(_("Could not reach council site: ") + str(e))
+
+    if resp.status_code != 200:
+        frappe.throw(_(f"Council site returned error {resp.status_code}"))
+
+    data = resp.json().get("message") or {}
+    auto_login_path = data.get("auto_login_path") or "/frontend/"
+    return {
+        "success": True,
+        "auto_login_url": api_url + auto_login_path,
+    }
+
+
+@frappe.whitelist()
 def get_company_members():
     """Returns all hub users belonging to the same company as the logged-in agent."""
     _require_hub_mode()

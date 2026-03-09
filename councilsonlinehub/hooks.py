@@ -1,4 +1,10 @@
 app_name = "councilsonlinehub"
+
+# SPA catch-all: serve frontend.html for all /frontend/* routes
+website_route_rules = [
+	{"from_route": "/frontend/<path:app_path>", "to_route": "frontend"},
+]
+
 app_title = "CouncilsOnline Hub"
 app_publisher = "CouncilsOnline"
 app_description = "Hub site for CouncilsOnline NZ agent network"
