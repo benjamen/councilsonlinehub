@@ -8,7 +8,6 @@ on:
 
 env:
   SERVER_HOST: 77.37.87.141
-  SERVER_USER: ${{ secrets.TAYTAY_SERVER_USER }}
   BENCH_PATH: /home/frappe-user/frappe-bench
   SITE_NAME: portal.councilsonline.com
   HUB_APP: councilsonlinehub
@@ -26,26 +25,30 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup SSH
+        env:
+          SSH_KEY_B64: ${{ secrets.TAYTAY_SSH_PRIVATE_KEY_B64 }}
+          SERVER_USER: ${{ secrets.TAYTAY_SERVER_USER }}
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          echo "${{ secrets.TAYTAY_SSH_PRIVATE_KEY_B64 }}" | tr -d '\n' | base64 -d > ~/.ssh/deploy_key
+          echo "${SSH_KEY_B64}" | tr -d '\n' | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           printf 'Host %s\n  IdentityFile ~/.ssh/deploy_key\n  StrictHostKeyChecking no\n  UserKnownHostsFile=/dev/null\n' "${{ env.SERVER_HOST }}" >> ~/.ssh/config
           chmod 600 ~/.ssh/config
           ssh-keyscan -H "${{ env.SERVER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
-          SERVER_USER=$(echo "${{ secrets.TAYTAY_SERVER_USER }}" | tr -d '[:space:]')
-          echo "Testing SSH connection as ${SERVER_USER}..."
-          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 -l "${SERVER_USER}" "${{ env.SERVER_HOST }}" "echo 'SSH OK'; hostname"
+          CLEAN_USER=$(echo "${SERVER_USER}" | tr -d '[:space:]')
+          echo "Testing SSH connection as ${CLEAN_USER}..."
+          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 -l "${CLEAN_USER}" "${{ env.SERVER_HOST }}" "echo 'SSH OK'; hostname"
 
       - name: Deploy Hub to Production
+        env:
+          SERVER_USER: ${{ secrets.TAYTAY_SERVER_USER }}
         run: |
-          SERVER_USER=$(echo "${{ secrets.TAYTAY_SERVER_USER }}" | tr -d '[:space:]')
-          ssh -i ~/.ssh/deploy_key -l "${SERVER_USER}" "${{ env.SERVER_HOST }}" << 'SSHEOF'
+          CLEAN_USER=$(echo "${SERVER_USER}" | tr -d '[:space:]')
+          ssh -i ~/.ssh/deploy_key -l "${CLEAN_USER}" "${{ env.SERVER_HOST }}" bash << 'SSHEOF'
             set -e
             BENCH_PATH="/home/frappe-user/frappe-bench"
             SITE_NAME="portal.councilsonline.com"
             HUB_APP="councilsonlinehub"
-            FRONTEND_APP="councilsonline"
 
             export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519_benja_repo -o StrictHostKeyChecking=no"
             git config --global --add safe.directory "$BENCH_PATH/apps/$HUB_APP"
@@ -82,7 +85,7 @@ jobs:
             sleep 2
             sudo systemctl reload nginx
             echo "Done: https://$SITE_NAME"
-          SSHEOF
+SSHEOF
 
       - name: Post-Deployment Verification
         run: |
