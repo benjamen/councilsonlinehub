@@ -55,6 +55,51 @@
         </div>
       </div>
 
+      <!-- Company details card (company agents only) -->
+      <div v-if="profile && isCompanyAgent" class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+        <h3 class="text-sm font-semibold text-gray-700 mb-3">Company Details</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+          <div v-if="profile.company_number" class="flex justify-between">
+            <span class="text-gray-500">Company #</span>
+            <span class="text-gray-900 font-medium">{{ profile.company_number }}</span>
+          </div>
+          <div v-if="profile.gst_number" class="flex justify-between">
+            <span class="text-gray-500">GST #</span>
+            <span class="text-gray-900 font-medium">{{ profile.gst_number }}</span>
+          </div>
+          <div v-if="profile.physical_city" class="flex justify-between">
+            <span class="text-gray-500">City</span>
+            <span class="text-gray-900 font-medium">{{ profile.physical_city }}</span>
+          </div>
+          <div v-if="profile.business_phone" class="flex justify-between">
+            <span class="text-gray-500">Phone</span>
+            <span class="text-gray-900 font-medium">{{ profile.business_phone }}</span>
+          </div>
+        </div>
+
+        <!-- Directors -->
+        <div v-if="profile.directors && profile.directors.length" class="mt-4 pt-4 border-t border-gray-100">
+          <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Directors</p>
+          <div class="flex flex-wrap gap-2">
+            <span v-for="d in profile.directors" :key="d.email || d.first_name"
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-700">
+              {{ d.first_name }} {{ d.last_name }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Authorising Officer -->
+        <div v-if="profile.authorising_officer" class="mt-3 pt-3 border-t border-gray-100">
+          <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Authorising Officer</p>
+          <p class="text-sm text-gray-800">
+            {{ profile.authorising_officer.first_name }} {{ profile.authorising_officer.last_name }}
+            <span v-if="profile.authorising_officer.email" class="text-gray-500 ml-1">
+              — {{ profile.authorising_officer.email }}
+            </span>
+          </p>
+        </div>
+      </div>
+
       <!-- Stats -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
@@ -149,6 +194,13 @@ const profileLoading = ref(true)
 const initials = computed(() => {
   const name = profile.value?.company_name || profile.value?.trading_name || session.user || ''
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'
+})
+
+const isCompanyAgent = computed(() => {
+  if (!profile.value) return false
+  const type = (profile.value.business_type || '').toLowerCase()
+  return type.includes('company') || type.includes('ltd') || type.includes('limited') ||
+    !!profile.value.company_number || !!(profile.value.directors && profile.value.directors.length)
 })
 
 const councilOptions = computed(() => [...new Set(allRequests.value.map(r => r.council_name).filter(Boolean))])
