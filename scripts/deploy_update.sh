@@ -35,8 +35,18 @@ rm -rf node_modules.bak.* 2>/dev/null || true
 # Some CI runs or previous commands may create root-owned files; fix ownership
 # before running package install.
 sudo chown -R frappe-user:frappe-user "$BENCH_PATH/apps/$HUB_APP/frontend" 2>/dev/null || true
-yarn install --network-timeout 100000
-VITE_BUILD_TIME=$(date +%s) yarn build
+# Defensive cleanup: remove any leftover node_modules and caches that may be
+# owned by root or another user, then ensure the frontend directory is owned
+# by `frappe-user` so the install runs without permission errors.
+sudo rm -rf "$BENCH_PATH/apps/$HUB_APP/frontend/node_modules" 2>/dev/null || true
+sudo rm -rf "$BENCH_PATH/apps/$HUB_APP/frontend/.turbo" 2>/dev/null || true
+sudo chown -R frappe-user:frappe-user "$BENCH_PATH/apps/$HUB_APP/frontend" 2>/dev/null || true
+
+# Run yarn explicitly as the `frappe-user` to avoid creating root-owned files.
+sudo -H -u frappe-user bash -lc 'cd """$BENCH_PATH/apps/$HUB_APP/frontend""" && yarn install --network-timeout 100000'
+
+# Build as the same user so generated assets are owned correctly.
+sudo -H -u frappe-user bash -lc 'cd """$BENCH_PATH/apps/$HUB_APP/frontend""" && VITE_BUILD_TIME=$(date +%s) yarn build'
 
 echo "==> Clearing Python bytecode..."
 find "$BENCH_PATH/apps/$HUB_APP" -name '*.pyc' -delete 2>/dev/null || true
