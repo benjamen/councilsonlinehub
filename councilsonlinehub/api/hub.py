@@ -18,7 +18,10 @@ from frappe import _
 
 def _require_hub_mode():
     settings = frappe.get_single("CouncilsOnline Settings")
-    if getattr(settings, "site_mode", "council") != "hub":
+    # Treat None/empty as "hub" — councilsonlinehub is only installed on hub sites.
+    # getattr default only fires when the attribute is missing, not when it's "".
+    mode = (getattr(settings, "site_mode", None) or "hub")
+    if mode != "hub":
         frappe.throw(_("This endpoint is only available on the hub site"), frappe.PermissionError)
 
 

@@ -6,12 +6,17 @@ BENCH_PATH="/home/frappe-user/frappe-bench"
 SITE_NAME="portal.councilsonline.com"
 HUB_APP="councilsonlinehub"
 HUB_REPO="https://github.com/benjamen/councilsonlinehub.git"
+APP_DIR="$BENCH_PATH/apps/$HUB_APP"
+FRONTEND="$APP_DIR/frontend"
+
+# ── Reclaim ownership (in case any file was ever written by root) ─────────────
+# frappe-user has passwordless sudo for service management, so chown works too.
+sudo chown -R frappe-user:frappe-user "$APP_DIR/" 2>/dev/null || true
 
 # ── Git pull ──────────────────────────────────────────────────────────────────
-git config --global --add safe.directory "$BENCH_PATH/apps/$HUB_APP"
-cd "$BENCH_PATH/apps/$HUB_APP"
+git config --global --add safe.directory "$APP_DIR"
+cd "$APP_DIR"
 
-# Ensure remote origin is set to GitHub (HTTPS — no SSH key needed for public repo)
 git remote get-url origin &>/dev/null \
   && git remote set-url origin "$HUB_REPO" \
   || git remote add origin "$HUB_REPO"
@@ -23,25 +28,22 @@ git clean -fd
 git log -1 --oneline
 
 # ── Frontend build ────────────────────────────────────────────────────────────
-FRONTEND="$BENCH_PATH/apps/$HUB_APP/frontend"
 echo "==> Building frontend..."
-
 cd "$FRONTEND"
 
-# Remove node_modules — may be root-owned if initial install ran as root.
-# If removal fails, skip it (yarn install will overwrite/update in place).
-# ONE-TIME FIX if this keeps failing: SSH to server and run:
-#   sudo chown -R frappe-user:frappe-user ~/frappe-bench/apps/councilsonlinehub/frontend/
-if ! rm -rf node_modules 2>/dev/null; then
-  echo "WARNING: Could not remove node_modules (root-owned). Run on server: sudo chown -R frappe-user:frappe-user ~/frappe-bench/apps/councilsonlinehub/frontend/"
-fi
+# mv only needs write access on the parent dir (which frappe-user owns), so it
+# succeeds even when node_modules contains root-owned files; rm -rf would fail.
+rm -rf node_modules 2>/dev/null \
+  || mv node_modules "node_modules.bak.$(date +%s)" 2>/dev/null \
+  || true
+rm -rf node_modules.bak.* 2>/dev/null || true
 
-yarn install
+yarn install --frozen-lockfile
 yarn build
 
 # ── Python / Frappe ───────────────────────────────────────────────────────────
-find "$BENCH_PATH/apps/$HUB_APP" -name '*.pyc' -delete 2>/dev/null || true
-find "$BENCH_PATH/apps/$HUB_APP" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+find "$APP_DIR" -name '*.pyc' -delete 2>/dev/null || true
+find "$APP_DIR" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
 
 echo "==> Migrating $SITE_NAME..."
 cd "$BENCH_PATH"
