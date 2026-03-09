@@ -1,0 +1,62 @@
+{
+ "actions": [],
+ "creation": "2026-03-09 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "hub_section",
+  "site_mode",
+  "hub_service_token",
+  "council_registry_section",
+  "council_registry"
+ ],
+ "fields": [
+  {
+   "fieldname": "hub_section",
+   "fieldtype": "Section Break",
+   "label": "Hub Settings"
+  },
+  {
+   "default": "hub",
+   "fieldname": "site_mode",
+   "fieldtype": "Select",
+   "label": "Site Mode",
+   "options": "hub\ncouncil"
+  },
+  {
+   "fieldname": "hub_service_token",
+   "fieldtype": "Password",
+   "label": "Hub Service Token",
+   "description": "Shared secret used by council sites to authenticate with this hub"
+  },
+  {
+   "fieldname": "council_registry_section",
+   "fieldtype": "Section Break",
+   "label": "Council Registry"
+  },
+  {
+   "fieldname": "council_registry",
+   "fieldtype": "Table",
+   "label": "Council Registry",
+   "options": "Council Registry Entry"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-03-09 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Councilsonlinehub",
+ "name": "CouncilsOnline Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
