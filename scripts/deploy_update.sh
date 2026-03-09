@@ -45,10 +45,35 @@ sudo rm -rf "$FRONTEND_DIR/.turbo" 2>/dev/null || true
 sudo chown -R frappe-user:frappe-user "$FRONTEND_DIR" 2>/dev/null || true
 
 # Run yarn explicitly as the `frappe-user` to avoid creating root-owned files.
-sudo -H -u frappe-user bash -lc "cd '$FRONTEND_DIR' && yarn install --network-timeout 100000"
+echo "==> Installing frontend dependencies (attempt 1: as frappe-user)..."
+if sudo -H -u frappe-user bash -lc "cd '$FRONTEND_DIR' && yarn install --network-timeout 100000"; then
+  echo "yarn install succeeded as frappe-user"
+else
+  echo "yarn install failed as frappe-user; retrying as root with unsafe-perm..."
+  # Retry as root with unsafe-perm to allow scripts to run and create binaries.
+  if sudo -H bash -lc "cd '$FRONTEND_DIR' && npm_config_unsafe_perm=true yarn install --network-timeout 100000"; then
+    echo "yarn install succeeded as root (unsafe-perm)"
+    # Ensure correct ownership
+    sudo chown -R frappe-user:frappe-user "$FRONTEND_DIR" 2>/dev/null || true
+  else
+    echo "ERROR: yarn install failed (both as frappe-user and as root)." >&2
+    exit 1
+  fi
+fi
 
-# Build as the same user so generated assets are owned correctly.
-sudo -H -u frappe-user bash -lc "cd '$FRONTEND_DIR' && VITE_BUILD_TIME=$(date +%s) yarn build"
+echo "==> Building frontend (as frappe-user)..."
+if sudo -H -u frappe-user bash -lc "cd '$FRONTEND_DIR' && VITE_BUILD_TIME=$(date +%s) yarn build"; then
+  echo "frontend build succeeded"
+else
+  echo "Build failed when running as frappe-user; attempting as root (unsafe-perm)..."
+  if sudo -H bash -lc "cd '$FRONTEND_DIR' && VITE_BUILD_TIME=$(date +%s) npm_config_unsafe_perm=true yarn build"; then
+    echo "frontend build succeeded as root"
+    sudo chown -R frappe-user:frappe-user "$FRONTEND_DIR" 2>/dev/null || true
+  else
+    echo "ERROR: frontend build failed (both as frappe-user and as root)." >&2
+    exit 1
+  fi
+fi
 
 echo "==> Clearing Python bytecode..."
 find "$BENCH_PATH/apps/$HUB_APP" -name '*.pyc' -delete 2>/dev/null || true
