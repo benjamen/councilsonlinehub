@@ -27,23 +27,14 @@ jobs:
 
       - name: Setup SSH
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          echo "${{ secrets.TAYTAY_SSH_PRIVATE_KEY_B64 }}" | tr -d '\n' | base64 -d > ~/.ssh/deploy_key 2>/dev/null || {
-            echo "ERROR: Failed to decode SSH key"
-            exit 1
-          }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "${{ secrets.TAYTAY_SSH_PRIVATE_KEY_B64 }}" | tr -d '\n' | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          cat >> ~/.ssh/config <<SSH_CONFIG
-          Host ${{ env.SERVER_HOST }}
-            IdentityFile ~/.ssh/deploy_key
-            StrictHostKeyChecking no
-            UserKnownHostsFile=/dev/null
-          SSH_CONFIG
+          printf 'Host %s\n  IdentityFile ~/.ssh/deploy_key\n  StrictHostKeyChecking no\n  UserKnownHostsFile=/dev/null\n' "${{ env.SERVER_HOST }}" >> ~/.ssh/config
           chmod 600 ~/.ssh/config
-          ssh-keyscan -H ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -H "${{ env.SERVER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
           echo "Testing SSH connection..."
-          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=5 ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} "echo 'SSH OK'; hostname"
+          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 "${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}" "echo 'SSH OK'; hostname"
 
       - name: Deploy Hub to Production
         run: |
