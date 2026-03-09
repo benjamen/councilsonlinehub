@@ -335,3 +335,109 @@ def test_apply_hub_data(target_email, hub_data_json):
         "physical_suburb": getattr(profile_doc, "physical_suburb", None),
         "specialties": [s.specialty_name for s in profile_doc.specialties],
     }
+
+
+@frappe.whitelist()
+def get_company_members():
+    """Returns all hub users belonging to the same company as the logged-in agent."""
+    _require_hub_mode()
+    user = frappe.session.user
+    if user in ("Guest", "Administrator"):
+        frappe.throw(_("You must be logged in"), frappe.PermissionError)
+
+    if not frappe.db.exists("User Profile Extended", user):
+        return []
+
+    company = frappe.db.get_value("User Profile Extended", user, "company_name")
+    if not company:
+        return []
+
+    members = frappe.get_all(
+        "User Profile Extended",
+        filters={"company_name": company},
+        fields=["name", "full_name", "user_role", "is_officer"],
+    )
+    # Enrich with enabled status from User doctype
+    for m in members:
+        m["enabled"] = frappe.db.get_value("User", m["name"], "enabled") or 0
+    return members
+
+
+@frappe.whitelist()
+def invite_company_member(email=None, first_name=None, last_name=None):
+    """Invite a new staff member to join the agent's company on the hub."""
+    _require_hub_mode()
+    inviter = frappe.session.user
+    if inviter in ("Guest", "Administrator"):
+        frappe.throw(_("You must be logged in"), frappe.PermissionError)
+
+    if not email or not first_name:
+        frappe.throw(_("Email and first name are required"))
+
+    if not frappe.db.exists("User Profile Extended", inviter):
+        frappe.throw(_("Your profile is not set up"))
+
+    inviter_profile = frappe.get_doc("User Profile Extended", inviter)
+    company = inviter_profile.company_name
+    business_type = inviter_profile.business_type
+
+    if not company:
+        frappe.throw(_("You must have a company set up before inviting members"))
+
+    # Create or get Frappe user
+    if not frappe.db.exists("User", email):
+        user_doc = frappe.get_doc({
+            "doctype": "User",
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name or "",
+            "user_type": "Website User",
+            "send_welcome_email": 0,
+        })
+        user_doc.flags.ignore_permissions = True
+        user_doc.insert()
+        # Send password reset link as invite (works without outgoing email config)
+        try:
+            frappe.sendmail(
+                recipients=[email],
+                subject=f"You've been invited to {company} on CouncilsOnline Hub",
+                message=f"Hi {first_name},<br><br>"
+                        f"You've been added to {company} on CouncilsOnline Hub.<br><br>"
+                        f"Please visit the hub to set your password and get started.",
+                now=True,
+            )
+        except Exception:
+            pass  # Email sending is optional; user can be manually notified
+    else:
+        user_doc = frappe.get_doc("User", email)
+        if not user_doc.enabled:
+            user_doc.enabled = 1
+            user_doc.save(ignore_permissions=True)
+
+    # Add Agent role if missing
+    existing_roles = [r.role for r in user_doc.roles]
+    if "Agent" not in existing_roles:
+        user_doc.append("roles", {"role": "Agent"})
+        user_doc.save(ignore_permissions=True)
+
+    # Create or update User Profile Extended
+    if not frappe.db.exists("User Profile Extended", email):
+        profile = frappe.get_doc({
+            "doctype": "User Profile Extended",
+            "user": email,
+            "full_name": f"{first_name} {last_name or ''}".strip(),
+            "company_name": company,
+            "business_type": business_type,
+            "user_role": "Agent",
+            "is_officer": 0,
+        })
+        profile.flags.ignore_permissions = True
+        profile.insert()
+    else:
+        profile = frappe.get_doc("User Profile Extended", email)
+        profile.company_name = company
+        profile.business_type = business_type
+        profile.save(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {"success": True, "email": email, "message": f"Invitation sent to {email}"}

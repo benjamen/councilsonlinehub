@@ -1,16 +1,60 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <header class="bg-white shadow-sm">
-      <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-        <h1 class="text-lg font-semibold text-gray-900">My Applications</h1>
-        <div class="flex items-center gap-3">
-          <router-link to="/hub/profile" class="text-sm text-blue-600 hover:text-blue-800">Edit Profile</router-link>
-          <router-link to="/hub/councils" class="text-sm text-blue-600 hover:text-blue-800">My Councils</router-link>
-        </div>
-      </div>
-    </header>
+    <HubNav />
 
     <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+
+      <!-- Agent/Company header card -->
+      <div v-if="profile" class="bg-white rounded-xl border border-gray-200 p-5 mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
+        <!-- Avatar / initials -->
+        <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+          <span class="text-xl font-bold text-blue-700">{{ initials }}</span>
+        </div>
+
+        <!-- Identity -->
+        <div class="flex-1 min-w-0">
+          <h2 class="text-lg font-semibold text-gray-900 truncate">
+            {{ profile.company_name || profile.trading_name || 'Your Company' }}
+          </h2>
+          <p v-if="profile.trading_name && profile.trading_name !== profile.company_name"
+             class="text-sm text-gray-500 truncate">Trading as {{ profile.trading_name }}</p>
+          <div class="flex flex-wrap gap-2 mt-1.5">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+              {{ profile.business_type || 'Agent' }}
+            </span>
+            <span v-for="s in (profile.specialties || []).slice(0, 3)" :key="s"
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+              {{ s }}
+            </span>
+            <span v-if="(profile.specialties || []).length > 3"
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+              +{{ profile.specialties.length - 3 }} more
+            </span>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="flex gap-2 flex-shrink-0">
+          <router-link to="/hub/profile"
+            class="px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+            Edit Profile
+          </router-link>
+          <router-link to="/hub/councils"
+            class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+            My Councils
+          </router-link>
+        </div>
+      </div>
+
+      <!-- Skeleton while profile loading -->
+      <div v-else-if="profileLoading" class="bg-white rounded-xl border border-gray-200 p-5 mb-6 flex items-center gap-4 animate-pulse">
+        <div class="w-14 h-14 rounded-full bg-gray-200 flex-shrink-0"></div>
+        <div class="flex-1 space-y-2">
+          <div class="h-4 bg-gray-200 rounded w-48"></div>
+          <div class="h-3 bg-gray-100 rounded w-32"></div>
+        </div>
+      </div>
+
       <!-- Stats -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
@@ -90,12 +134,22 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { apiClient } from '@/services/api/base'
+import HubNav from '@/components/HubNav.vue'
+import { session } from '@/data/session'
 
 const allRequests = ref([])
 const loading = ref(false)
 const filterCouncil = ref('')
 const filterStatus = ref('')
 const filterText = ref('')
+
+const profile = ref(null)
+const profileLoading = ref(true)
+
+const initials = computed(() => {
+  const name = profile.value?.company_name || profile.value?.trading_name || session.user || ''
+  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'
+})
 
 const councilOptions = computed(() => [...new Set(allRequests.value.map(r => r.council_name).filter(Boolean))])
 const statusOptions = computed(() => [...new Set(allRequests.value.map(r => r.workflow_state).filter(Boolean))])
@@ -134,10 +188,21 @@ function openRequest(req) {
   }
 }
 
+async function loadProfile() {
+  profileLoading.value = true
+  try {
+    profile.value = await apiClient.call('councilsonlinehub.api.hub.get_hub_profile')
+  } catch {
+    profile.value = null
+  } finally {
+    profileLoading.value = false
+  }
+}
+
 async function loadRequests() {
   loading.value = true
   try {
-    const result = await apiClient.call('councilsonline.api.hub.aggregate_requests')
+    const result = await apiClient.call('councilsonlinehub.api.hub.aggregate_requests')
     allRequests.value = result || []
   } catch (e) {
     allRequests.value = []
@@ -146,5 +211,8 @@ async function loadRequests() {
   }
 }
 
-onMounted(loadRequests)
+onMounted(() => {
+  loadProfile()
+  loadRequests()
+})
 </script>

@@ -1,0 +1,120 @@
+name: Deploy CouncilsOnline Hub
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  SERVER_HOST: 77.37.87.141
+  SERVER_USER: ${{ secrets.TAYTAY_SERVER_USER }}
+  BENCH_PATH: /home/frappe-user/frappe-bench
+  SITE_NAME: portal.councilsonline.com
+  HUB_APP: councilsonlinehub
+  FRONTEND_APP: councilsonline
+
+concurrency:
+  group: server-deploy-hub-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.TAYTAY_SSH_PRIVATE_KEY_B64 }}" | tr -d '\n' | base64 -d > ~/.ssh/deploy_key 2>/dev/null || {
+            echo "ERROR: Failed to decode SSH key"
+            exit 1
+          }
+          chmod 600 ~/.ssh/deploy_key
+          cat >> ~/.ssh/config <<SSH_CONFIG
+          Host ${{ env.SERVER_HOST }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+          SSH_CONFIG
+          chmod 600 ~/.ssh/config
+          ssh-keyscan -H ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          echo "Testing SSH connection..."
+          ssh -i ~/.ssh/deploy_key -o ConnectTimeout=5 ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} "echo 'SSH OK'; hostname"
+
+      - name: Deploy Hub to Production
+        run: |
+          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'SSHEOF'
+            set -e
+            BENCH_PATH="/home/frappe-user/frappe-bench"
+            SITE_NAME="portal.councilsonline.com"
+            HUB_APP="councilsonlinehub"
+            FRONTEND_APP="councilsonline"
+
+            export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519_benja_repo -o StrictHostKeyChecking=no"
+            git config --global --add safe.directory "$BENCH_PATH/apps/$HUB_APP"
+            git config --global --add safe.directory "$BENCH_PATH/apps/$FRONTEND_APP"
+
+            echo "Pulling $HUB_APP (main)..."
+            cd "$BENCH_PATH/apps/$HUB_APP"
+            git fetch origin main && git reset --hard origin/main && git clean -fd
+            git log -1 --oneline
+
+            echo "Pulling $FRONTEND_APP (main)..."
+            cd "$BENCH_PATH/apps/$FRONTEND_APP"
+            git fetch origin main
+            git ls-files councilsonline/public/frontend/ | xargs git update-index --force-remove 2>/dev/null || true
+            git reset --hard origin/main && git clean -fd
+            git log -1 --oneline
+
+            echo "Building frontend..."
+            cd "$BENCH_PATH/apps/$FRONTEND_APP/frontend"
+            rm -rf node_modules 2>/dev/null || mv node_modules "node_modules.bak.$(date +%s)" 2>/dev/null || true
+            rm -rf node_modules.bak.* 2>/dev/null || true
+            yarn install --frozen-lockfile
+            VITE_BUILD_TIME=$(date +%s) yarn build
+
+            echo "Clearing Python bytecode..."
+            find "$BENCH_PATH/apps/$HUB_APP" -name '*.pyc' -delete
+            find "$BENCH_PATH/apps/$FRONTEND_APP" -name '*.pyc' -delete
+            find "$BENCH_PATH/apps" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+
+            echo "Migrating..."
+            cd "$BENCH_PATH"
+            bench --site "$SITE_NAME" migrate
+            bench --site "$SITE_NAME" import-fixtures || echo "fixture warnings"
+            bench --site "$SITE_NAME" clear-cache
+            bench --site "$SITE_NAME" clear-website-cache
+            redis-cli FLUSHALL || true
+
+            echo "Restarting services..."
+            bench restart || true
+            sudo supervisorctl stop all || true
+            sleep 2
+            sudo supervisorctl reread && sudo supervisorctl update && sudo supervisorctl start all || true
+            sleep 2
+            sudo systemctl reload nginx
+            echo "Done: https://$SITE_NAME"
+          SSHEOF
+
+      - name: Post-Deployment Verification
+        run: |
+          sleep 15
+          SITE_URL="https://portal.councilsonline.com"
+          echo -n "API ping... "
+          curl -f -s "$SITE_URL/api/method/ping" | grep -q pong && echo "OK" || echo "FAIL"
+          echo -n "Frontend... "
+          curl -f -s -o /dev/null -w '%{http_code}' "$SITE_URL/frontend" | grep -q 200 && echo "OK" || echo "FAIL"
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "## Hub Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Site:** https://portal.councilsonline.com" >> $GITHUB_STEP_SUMMARY
+          echo "- **Apps:** councilsonlinehub + councilsonline" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Time:** $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY

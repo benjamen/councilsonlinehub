@@ -1,21 +1,13 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <header class="bg-white shadow-sm">
-      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <router-link to="/hub/dashboard" class="text-gray-500 hover:text-gray-700">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </router-link>
-          <h1 class="text-lg font-semibold text-gray-900">My Profile</h1>
-        </div>
-        <button @click="saveProfile" :disabled="saving"
-          class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50">
-          {{ saving ? 'Saving...' : 'Save Changes' }}
-        </button>
-      </div>
-    </header>
+    <HubNav />
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 pt-6 flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-gray-900">My Profile</h2>
+      <button @click="saveProfile" :disabled="saving"
+        class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50">
+        {{ saving ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </div>
 
     <div v-if="loading" class="flex justify-center py-16 text-sm text-gray-500">Loading...</div>
 
@@ -190,6 +182,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import HubNav from '@/components/HubNav.vue'
 import { apiClient } from '@/services/api/base'
 
 const SPECIALTIES = [
