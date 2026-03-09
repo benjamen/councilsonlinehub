@@ -10,6 +10,7 @@ export default defineConfig({
 			jinjaBootData: true,
 			lucideIcons: true,
 			buildConfig: {
+				// Use the existing template located at ../councilsonlinehub/www/frontend.html
 				indexHtmlPath: "../councilsonlinehub/www/frontend.html",
 				emptyOutDir: false,
 				sourcemap: true,
@@ -17,9 +18,9 @@ export default defineConfig({
 		}),
 		vue(),
 	],
-	build: {
-		// Output directly to the site's public folder so nginx will serve index.html
-		outDir: "../councilsonlinehub/public",
+		build: {
+			// Output into the site's public/frontend folder so assets reference paths
+			outDir: "../councilsonlinehub/public/frontend",
 		// keep existing files in public (do not wipe other site assets)
 		emptyOutDir: false,
 		target: "es2015",
@@ -29,8 +30,8 @@ export default defineConfig({
 			pure: ["console.log", "console.debug", "console.trace"],
 		},
 	},
-	// Ensure absolute asset paths in production
-	base: "/",
+	// Ensure absolute asset paths in production (namespace under /assets/<app>/frontend)
+	base: "/assets/councilsonlinehub/frontend/",
 	resolve: {
 		alias: {
 			"@": path.resolve(__dirname, "src"),
