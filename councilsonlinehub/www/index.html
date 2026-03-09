@@ -1,0 +1,5 @@
+{% if frappe.session.user and frappe.session.user != "Guest" %}
+<meta http-equiv="refresh" content="0;url=/frontend/hub/dashboard">
+{% else %}
+<meta http-equiv="refresh" content="0;url=/frontend">
+{% endif %}
