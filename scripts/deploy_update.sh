@@ -92,6 +92,13 @@ else
   fi
 
   echo "==> Building frontend using .node_modules_tmp (NODE_PATH)..."
+  # Ensure an index.html exists for Vite — the project uses a template located at
+  # ../councilsonlinehub/www/frontend.html; copy it into the frontend dir if
+  # missing so Vite can find an entry module.
+  if [ ! -f "$FRONTEND_DIR/index.html" ] && [ -f "$BENCH_PATH/apps/$HUB_APP/councilsonlinehub/www/frontend.html" ]; then
+    cp "$BENCH_PATH/apps/$HUB_APP/councilsonlinehub/www/frontend.html" "$FRONTEND_DIR/index.html"
+  fi
+
   if cd "$FRONTEND_DIR" && NODE_PATH=./.node_modules_tmp VITE_BUILD_TIME=$(date +%s) yarn build; then
     echo "frontend build succeeded using .node_modules_tmp"
   else
