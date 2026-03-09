@@ -27,7 +27,9 @@ git clean -fd
 git log -1 --oneline
 
 echo "==> Building hub standalone frontend..."
-cd "$BENCH_PATH/apps/$HUB_APP/frontend"
+# Compute frontend path explicitly to ensure correct expansion inside sudo commands.
+FRONTEND_DIR="$BENCH_PATH/apps/$HUB_APP/frontend"
+cd "$FRONTEND_DIR"
 # Clean node_modules (may be owned by different user — use sudo if needed)
 sudo rm -rf node_modules 2>/dev/null || rm -rf node_modules 2>/dev/null || true
 rm -rf node_modules.bak.* 2>/dev/null || true
@@ -38,15 +40,15 @@ sudo chown -R frappe-user:frappe-user "$BENCH_PATH/apps/$HUB_APP/frontend" 2>/de
 # Defensive cleanup: remove any leftover node_modules and caches that may be
 # owned by root or another user, then ensure the frontend directory is owned
 # by `frappe-user` so the install runs without permission errors.
-sudo rm -rf "$BENCH_PATH/apps/$HUB_APP/frontend/node_modules" 2>/dev/null || true
-sudo rm -rf "$BENCH_PATH/apps/$HUB_APP/frontend/.turbo" 2>/dev/null || true
-sudo chown -R frappe-user:frappe-user "$BENCH_PATH/apps/$HUB_APP/frontend" 2>/dev/null || true
+sudo rm -rf "$FRONTEND_DIR/node_modules" 2>/dev/null || true
+sudo rm -rf "$FRONTEND_DIR/.turbo" 2>/dev/null || true
+sudo chown -R frappe-user:frappe-user "$FRONTEND_DIR" 2>/dev/null || true
 
 # Run yarn explicitly as the `frappe-user` to avoid creating root-owned files.
-sudo -H -u frappe-user bash -lc 'cd """$BENCH_PATH/apps/$HUB_APP/frontend""" && yarn install --network-timeout 100000'
+sudo -H -u frappe-user bash -lc "cd '$FRONTEND_DIR' && yarn install --network-timeout 100000"
 
 # Build as the same user so generated assets are owned correctly.
-sudo -H -u frappe-user bash -lc 'cd """$BENCH_PATH/apps/$HUB_APP/frontend""" && VITE_BUILD_TIME=$(date +%s) yarn build'
+sudo -H -u frappe-user bash -lc "cd '$FRONTEND_DIR' && VITE_BUILD_TIME=$(date +%s) yarn build"
 
 echo "==> Clearing Python bytecode..."
 find "$BENCH_PATH/apps/$HUB_APP" -name '*.pyc' -delete 2>/dev/null || true
