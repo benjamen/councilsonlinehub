@@ -7,18 +7,32 @@ export function sessionUser() {
   return user === "Guest" ? null : (user || null)
 }
 
-function refreshCsrfToken() {
-  const csrfCookie = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("csrf_token="))
-  if (csrfCookie) {
-    window.csrf_token = csrfCookie.split("=")[1]
-  }
-}
-
 export const session = reactive({
   user: sessionUser(),
   isLoggedIn: computed(() => !!session.user),
+
+  /** Verify session is still valid server-side. Clears user if expired. */
+  async validate() {
+    try {
+      const resp = await fetch("/api/method/frappe.auth.get_logged_user", {
+        credentials: "include",
+      })
+      if (!resp.ok) {
+        session.user = null
+        return false
+      }
+      const data = await resp.json()
+      const user = data.message
+      if (!user || user === "Guest") {
+        session.user = null
+        return false
+      }
+      session.user = user
+      return true
+    } catch {
+      return false
+    }
+  },
 
   logout: createResource({
     url: "logout",

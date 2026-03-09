@@ -454,8 +454,28 @@ async function loadRequests() {
   }
 }
 
+const PENDING_KEY = 'pending_council_code'
+
+async function provisionPendingCouncil() {
+  const code = localStorage.getItem(PENDING_KEY)
+  if (!code) return
+  localStorage.removeItem(PENDING_KEY)
+  try {
+    const result = await apiClient.call(
+      'councilsonlinehub.api.hub.provision_on_council',
+      { council_code: code }
+    )
+    if (result && result.auto_login_url) {
+      window.location.href = result.auto_login_url
+    }
+  } catch (e) {
+    console.error('Auto-provision failed:', e)
+  }
+}
+
 onMounted(() => {
   loadProfile()
   loadRequests()
+  provisionPendingCouncil()
 })
 </script>

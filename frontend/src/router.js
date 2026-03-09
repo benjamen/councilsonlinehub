@@ -9,6 +9,13 @@ const routes = [
     component: () => import("@/pages/HubLogin.vue"),
     meta: { public: true },
   },
+  // Council-initiated registration: /register?council_code=WDC
+  {
+    path: "/register",
+    name: "Register",
+    component: () => import("@/pages/HubRegister.vue"),
+    meta: { public: true },
+  },
   // Hub pages
   {
     path: "/hub/dashboard",
@@ -42,12 +49,24 @@ const router = createRouter({
   routes,
 })
 
-// Navigation guard: redirect unauthenticated users to login
-router.beforeEach((to) => {
+// Validate session server-side once per app load (not on every navigation)
+let sessionValidated = false
+
+router.beforeEach(async (to) => {
+  // On first protected-route visit, confirm the session is still alive server-side.
+  // This catches the case where the Frappe sid cookie has expired but user_id cookie
+  // is still present (so session.isLoggedIn reads true client-side).
+  if (!to.meta.public && !sessionValidated) {
+    sessionValidated = true
+    const valid = await session.validate()
+    if (!valid) {
+      return { name: "Login", query: { redirect: to.fullPath } }
+    }
+  }
+
   if (!to.meta.public && !session.isLoggedIn) {
     return { name: "Login", query: { redirect: to.fullPath } }
   }
-  // Already logged in → skip login page
   if (to.name === "Login" && session.isLoggedIn) {
     return { name: "HubDashboard" }
   }
