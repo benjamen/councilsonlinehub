@@ -18,7 +18,9 @@ export default defineConfig({
 		vue(),
 	],
 	build: {
-		outDir: "../councilsonlinehub/public/frontend",
+		// Output directly to the site's public folder so nginx will serve index.html
+		outDir: "../councilsonlinehub/public",
+		// keep existing files in public (do not wipe other site assets)
 		emptyOutDir: false,
 		target: "es2015",
 		sourcemap: true,
@@ -27,6 +29,8 @@ export default defineConfig({
 			pure: ["console.log", "console.debug", "console.trace"],
 		},
 	},
+	// Ensure absolute asset paths in production
+	base: "/",
 	resolve: {
 		alias: {
 			"@": path.resolve(__dirname, "src"),
