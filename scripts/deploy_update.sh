@@ -124,6 +124,14 @@ if [ -d "$BUILT_FRONTEND_DIR" ]; then
     SITE_INDEX="$BENCH_PATH/sites/$SITE_NAME/public/index.html"
     echo "<!doctype html><html><head><meta http-equiv=\"refresh\" content=\"0;url=/frontend\"></head><body></body></html>" | sudo tee "$SITE_INDEX" >/dev/null || true
     sudo chown frappe-user:frappe-user "$SITE_INDEX" 2>/dev/null || true
+      # Also copy built assets into the site's namespaced assets path so
+      # absolute asset URLs like /assets/<app>/frontend/... resolve.
+      ASSETS_TARGET="$BENCH_PATH/sites/$SITE_NAME/public/assets/$HUB_APP/frontend"
+      if [ -d "$BUILT_FRONTEND_DIR/assets" ]; then
+        sudo mkdir -p "$ASSETS_TARGET" 2>/dev/null || true
+        sudo cp -r "$BUILT_FRONTEND_DIR/assets/." "$ASSETS_TARGET/" 2>/dev/null || true
+        sudo chown -R frappe-user:frappe-user "$BENCH_PATH/sites/$SITE_NAME/public/assets" 2>/dev/null || true
+      fi
   else
     rm -rf "$SITE_PUBLIC_DIR" 2>/dev/null || true
     mkdir -p "$SITE_PUBLIC_DIR" 2>/dev/null || true
@@ -143,6 +151,13 @@ fi
 
 echo "==> Clearing Python bytecode..."
 find "$BENCH_PATH/apps/$HUB_APP" -name '*.pyc' -delete 2>/dev/null || true
+      # Also copy assets for non-sudo environments
+      ASSETS_TARGET="$BENCH_PATH/sites/$SITE_NAME/public/assets/$HUB_APP/frontend"
+      if [ -d "$BUILT_FRONTEND_DIR/assets" ]; then
+        mkdir -p "$ASSETS_TARGET" 2>/dev/null || true
+        cp -r "$BUILT_FRONTEND_DIR/assets/." "$ASSETS_TARGET/" 2>/dev/null || true
+        chown -R frappe-user:frappe-user "$BENCH_PATH/sites/$SITE_NAME/public/assets" 2>/dev/null || true
+      fi
 find "$BENCH_PATH/apps/$HUB_APP" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
 
 echo "==> Migrating..."
