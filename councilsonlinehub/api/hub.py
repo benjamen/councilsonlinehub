@@ -353,6 +353,8 @@ def provision_on_council(council_code=None):
 
     # Build full profile directly (avoid self-calling the service endpoint which requires a token)
     profile_data = {}
+    # Include the hub's own URL so council sites can link back for profile editing
+    profile_data["hub_url"] = frappe.utils.get_url().rstrip("/")
     if frappe.db.exists("User", user):
         u = frappe.get_doc("User", user)
         profile_data["first_name"] = u.first_name
