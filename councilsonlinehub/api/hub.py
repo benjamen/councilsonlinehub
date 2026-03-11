@@ -17,8 +17,11 @@ from frappe import _
 # ---------------------------------------------------------------------------
 
 def _validate_service_token(token):
-    settings = frappe.get_single("CouncilsOnline Settings")
-    expected = getattr(settings, "hub_service_token", None)
+    try:
+        from frappe.utils.password import get_decrypted_password
+        expected = get_decrypted_password("CouncilsOnline Settings", "CouncilsOnline Settings", "hub_service_token")
+    except Exception:
+        expected = None
     if not expected or token != expected:
         frappe.throw(_("Invalid service token"), frappe.AuthenticationError)
 
@@ -345,24 +348,54 @@ def provision_on_council(council_code=None):
         frappe.throw(_("Council not found in registry"))
 
     api_url = (entry.api_url or "").rstrip("/")
-    token = settings.hub_service_token
+    from frappe.utils.password import get_decrypted_password
+    token = get_decrypted_password("CouncilsOnline Settings", "CouncilsOnline Settings", "hub_service_token") or ""
 
-    # Build full profile (reuse existing service endpoint)
-    profile_data = get_agent_profile_for_council(agent_email=user, service_token=token)
-
-    # Augment with name + contact (get_agent_profile_for_council omits these)
+    # Build full profile directly (avoid self-calling the service endpoint which requires a token)
+    profile_data = {}
     if frappe.db.exists("User", user):
         u = frappe.get_doc("User", user)
         profile_data["first_name"] = u.first_name
         profile_data["last_name"] = u.last_name
-        profile_data["phone"] = (
-            frappe.db.get_value("User Profile Extended", user, "phone") or u.phone or ""
-        )
+        profile_data["phone"] = u.phone or ""
     if frappe.db.exists("User Profile Extended", user):
         p = frappe.get_doc("User Profile Extended", user)
+        profile_data["phone"] = p.phone or profile_data.get("phone", "")
         profile_data["company_name"] = p.company_name
         profile_data["business_type"] = p.business_type
         profile_data["user_role"] = p.user_role
+        profile_data["physical_flat_unit"] = getattr(p, "physical_flat_unit", None)
+        profile_data["physical_rural_delivery"] = getattr(p, "physical_rural_delivery", None)
+        profile_data["physical_suburb"] = getattr(p, "physical_suburb", None)
+        profile_data["physical_city"] = getattr(p, "physical_city", None)
+        profile_data["physical_postcode"] = getattr(p, "physical_postcode", None)
+        profile_data["mailing_type"] = getattr(p, "mailing_type", None)
+        profile_data["mailing_po_box"] = getattr(p, "mailing_po_box", None)
+        profile_data["mailing_suburb"] = getattr(p, "mailing_suburb", None)
+        profile_data["mailing_city"] = getattr(p, "mailing_city", None)
+        profile_data["mailing_postcode"] = getattr(p, "mailing_postcode", None)
+        profile_data["specialties"] = [s.specialty_name for s in (p.specialties or [])]
+        org_name = p.company_name
+        if org_name and frappe.db.exists("Organization", org_name):
+            org = frappe.get_doc("Organization", org_name)
+            profile_data["directors"] = [
+                {
+                    "first_name": d.get("first_name") or "",
+                    "last_name": d.get("last_name") or "",
+                    "email": d.get("email") or "",
+                    "phone": d.get("phone") or "",
+                }
+                for d in (org.get("directors") or [])
+            ]
+            officers = org.get("officers") or []
+            if officers:
+                o = officers[0]
+                profile_data["authorising_officer"] = {
+                    "first_name": o.get("first_name") or "",
+                    "last_name": o.get("last_name") or "",
+                    "email": o.get("email") or "",
+                    "phone": o.get("phone") or "",
+                }
 
     import requests as req
     try:
