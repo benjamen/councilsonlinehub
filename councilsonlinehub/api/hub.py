@@ -358,12 +358,20 @@ def provision_on_council(council_code=None):
         profile_data["first_name"] = u.first_name
         profile_data["last_name"] = u.last_name
         profile_data["phone"] = u.phone or ""
+        # Derive user_role from User's roles as a baseline (overridden by UPE value below)
+        u_roles = [r.role for r in (u.roles or [])]
+        profile_data["user_role"] = "Agent" if "Agent" in u_roles else "Individual"
     if frappe.db.exists("User Profile Extended", user):
-        p = frappe.get_doc("User Profile Extended", user)
+        frappe.flags.ignore_permissions = True
+        try:
+            p = frappe.get_doc("User Profile Extended", user)
+        finally:
+            frappe.flags.ignore_permissions = False
         profile_data["phone"] = p.phone or profile_data.get("phone", "")
         profile_data["company_name"] = p.company_name
         profile_data["business_type"] = p.business_type
-        profile_data["user_role"] = p.user_role
+        # UPE user_role is authoritative — override the User-role-derived value
+        profile_data["user_role"] = p.user_role or profile_data.get("user_role", "Individual")
         profile_data["physical_flat_unit"] = getattr(p, "physical_flat_unit", None)
         profile_data["physical_rural_delivery"] = getattr(p, "physical_rural_delivery", None)
         profile_data["physical_suburb"] = getattr(p, "physical_suburb", None)
