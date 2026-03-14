@@ -37,6 +37,13 @@
           >
             Profile
           </router-link>
+          <router-link
+            to="/hub/agents"
+            class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+            :class="isActive('/hub/agents') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'"
+          >
+            Agents
+          </router-link>
         </nav>
 
         <!-- Right side: user + logout -->
@@ -68,6 +75,11 @@
           class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
           :class="isActive('/hub/profile') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'"
         >Profile</router-link>
+        <router-link
+          to="/hub/agents"
+          class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+          :class="isActive('/hub/agents') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'"
+        >Agents</router-link>
       </div>
     </div>
   </header>
@@ -83,7 +95,7 @@ const route = useRoute()
 const userName = computed(() => session.user || '')
 
 function isActive(path) {
-  return route.path === path
+  return route.path === path || route.path.startsWith(path + '/')
 }
 
 function logout() {

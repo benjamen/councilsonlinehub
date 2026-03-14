@@ -37,6 +37,19 @@ const routes = [
     name: "HubTeam",
     component: () => import("@/pages/HubTeam.vue"),
   },
+  // Agent Marketplace (public)
+  {
+    path: "/hub/agents",
+    name: "HubAgentMarketplace",
+    component: () => import("@/pages/HubAgentMarketplace.vue"),
+    meta: { public: true },
+  },
+  {
+    path: "/hub/agents/:id",
+    name: "HubAgentDetail",
+    component: () => import("@/pages/HubAgentDetail.vue"),
+    meta: { public: true },
+  },
   // Catch-all: redirect to hub dashboard or login
   {
     path: "/:pathMatch(.*)*",

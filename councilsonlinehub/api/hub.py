@@ -645,3 +645,115 @@ def invite_company_member(email=None, first_name=None, last_name=None):
 
     frappe.db.commit()
     return {"success": True, "email": email, "message": f"Invitation sent to {email}"}
+
+
+# ---------------------------------------------------------------------------
+# Agent Marketplace endpoints (public — no auth required)
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist(allow_guest=True)
+def get_agent_listings(search=None, service=None, area=None):
+    """Return active, listed agents for the hub marketplace."""
+    agents = frappe.get_all(
+        "Agent Profile",
+        filters={"is_listed": 1, "status": "Active"},
+        fields=[
+            "name", "display_name", "profile_image", "business_type",
+            "company_name", "bio", "years_experience", "contact_email",
+            "contact_phone", "website", "total_applications",
+            "average_rating", "total_reviews",
+        ],
+        order_by="average_rating desc, total_applications desc",
+        limit=100,
+    )
+
+    for agent in agents:
+        agent["services"] = [
+            s.service_name for s in frappe.get_all(
+                "Agent Service",
+                filters={"parent": agent["name"]},
+                fields=["service_name"],
+            )
+        ]
+        agent["areas"] = [
+            a.area_name for a in frappe.get_all(
+                "Agent Area",
+                filters={"parent": agent["name"]},
+                fields=["area_name"],
+            )
+        ]
+
+    if service:
+        agents = [a for a in agents if service in a["services"]]
+    if area:
+        agents = [a for a in agents if area in a["areas"]]
+    if search:
+        q = search.lower()
+        agents = [
+            a for a in agents
+            if q in (a.get("display_name") or "").lower()
+            or q in (a.get("company_name") or "").lower()
+            or q in (a.get("bio") or "").lower()
+        ]
+
+    return {"agents": agents}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_agent_marketplace_filters():
+    """Return distinct services and areas for marketplace filter dropdowns."""
+    services = sorted({
+        s.service_name for s in frappe.get_all(
+            "Agent Service",
+            fields=["service_name"],
+            filters={"parenttype": "Agent Profile"},
+        ) if s.service_name
+    })
+    areas = sorted({
+        a.area_name for a in frappe.get_all(
+            "Agent Area",
+            fields=["area_name"],
+            filters={"parenttype": "Agent Profile"},
+        ) if a.area_name
+    })
+    return {"services": services, "areas": areas}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_agent_detail(agent_name=None):
+    """Return full agent profile for the detail page."""
+    if not agent_name:
+        frappe.throw(_("agent_name is required"))
+
+    if not frappe.db.exists("Agent Profile", agent_name):
+        frappe.throw(_("Agent not found"), frappe.DoesNotExistError)
+
+    profile = frappe.get_doc("Agent Profile", agent_name)
+
+    if not profile.is_listed or profile.status != "Active":
+        frappe.throw(_("Agent not found"), frappe.DoesNotExistError)
+
+    return {
+        "name": profile.name,
+        "display_name": profile.display_name,
+        "profile_image": profile.profile_image,
+        "business_type": profile.business_type,
+        "company_name": profile.company_name,
+        "bio": profile.bio,
+        "years_experience": profile.years_experience,
+        "contact_email": profile.contact_email,
+        "contact_phone": profile.contact_phone,
+        "website": profile.website,
+        "total_applications": profile.total_applications,
+        "average_rating": profile.average_rating,
+        "total_reviews": profile.total_reviews,
+        "services": [{"service_name": s.service_name} for s in (profile.services or [])],
+        "areas": [{"area_name": a.area_name} for a in (profile.areas or [])],
+        "reviews": frappe.get_all(
+            "Agent Review",
+            filters={"agent_profile": agent_name},
+            fields=["name", "reviewer_name", "rating", "title", "comment", "review_date"],
+            order_by="review_date desc",
+            limit=20,
+        ),
+    }
