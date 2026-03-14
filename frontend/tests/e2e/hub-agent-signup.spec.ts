@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test"
  * Hub E2E: Agent signs up and is visible across all councils
  */
 
-const BASE = process.env.BASE_URL || "http://localhost:8092"
+const BASE = process.env.BASE_URL || "http://127.0.0.1:8090"
 // Unique per run so we can re-run cleanly
 const TEST_AGENT_EMAIL = `hub-agent-fixed@councilstest.nz`
 const TEST_AGENT_PASSWORD = "TestPass2026"
@@ -28,6 +28,7 @@ async function loginAdmin(page) {
 	await page.fill("input#login_password, input[name='pwd']", "admin123")
 	await page.click(".btn-login, button[type='submit']")
 	await page.waitForURL("**/app**", { timeout: 15000 })
+	await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {})
 }
 
 test.describe.serial("Hub Agent Full Flow", () => {
@@ -114,7 +115,7 @@ test.describe.serial("Hub Agent Full Flow", () => {
 		}
 
 		const result = await page.evaluate(async () => {
-			const resp = await fetch("/api/method/councilsonline.api.hub.get_hub_profile", {
+			const resp = await fetch("/api/method/councilsonlinehub.api.hub.get_hub_profile", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -146,7 +147,7 @@ test.describe.serial("Hub Agent Full Flow", () => {
 		}
 
 		const result = await page.evaluate(async () => {
-			const resp = await fetch("/api/method/councilsonline.api.hub.aggregate_requests", {
+			const resp = await fetch("/api/method/councilsonlinehub.api.hub.aggregate_requests", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -166,8 +167,9 @@ test.describe.serial("Hub Agent Full Flow", () => {
 
 	test("STEP 5: get_council_agent_requests returns agent's council requests", async ({ page }) => {
 		await loginAdmin(page)
-		await page.goto(`${BASE}/frontend/`)
-		await page.waitForTimeout(1500)
+		// Use /app (desk) as base context — no Vue Router redirects, CSRF token available
+		await page.goto(`${BASE}/app`)
+		await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {})
 
 		const result = await page.evaluate(
 			async ({ agentEmail, token }) => {
@@ -203,7 +205,7 @@ test.describe.serial("Hub Agent Full Flow", () => {
 		const result = await page.evaluate(
 			async ({ agentEmail, token }) => {
 				const resp = await fetch(
-					"/api/method/councilsonline.api.hub.get_agent_profile_for_council",
+					"/api/method/councilsonlinehub.api.hub.get_agent_profile_for_council",
 					{
 						method: "POST",
 						headers: { "Content-Type": "application/json" },

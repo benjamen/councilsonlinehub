@@ -17,11 +17,8 @@ from frappe import _
 # ---------------------------------------------------------------------------
 
 def _validate_service_token(token):
-    try:
-        from frappe.utils.password import get_decrypted_password
-        expected = get_decrypted_password("CouncilsOnline Settings", "CouncilsOnline Settings", "hub_service_token")
-    except Exception:
-        expected = None
+    from frappe.utils.password import get_decrypted_password
+    expected = get_decrypted_password("CouncilsOnline Settings", "CouncilsOnline Settings", "hub_service_token")
     if not expected or token != expected:
         frappe.throw(_("Invalid service token"), frappe.AuthenticationError)
 
@@ -185,7 +182,8 @@ def aggregate_requests():
         frappe.throw(_("You must be logged in"), frappe.PermissionError)
 
     settings = frappe.get_single("CouncilsOnline Settings")
-    token = getattr(settings, "hub_service_token", None)
+    from frappe.utils.password import get_decrypted_password
+    token = get_decrypted_password("CouncilsOnline Settings", "CouncilsOnline Settings", "hub_service_token")
     registry = getattr(settings, "council_registry", []) or []
 
     import requests as req
@@ -338,11 +336,13 @@ def provision_on_council(council_code=None):
     if user in ("Guest", "Administrator"):
         frappe.throw(_("You must be logged in"), frappe.PermissionError)
 
-    settings = frappe.get_single("CouncilsOnline Settings")
-    entry = next(
-        (e for e in (settings.council_registry or [])
-         if e.council_code == council_code and e.is_active),
-        None,
+    # Query DB directly — bypasses the Single doctype document cache which
+    # caches child-table rows and doesn't always invalidate on child updates.
+    entry = frappe.db.get_value(
+        "Council Registry Entry",
+        {"council_code": council_code, "is_active": 1, "parenttype": "CouncilsOnline Settings"},
+        ["name", "council_code", "council_name", "api_url"],
+        as_dict=True,
     )
     if not entry:
         frappe.throw(_("Council not found in registry"))
@@ -371,7 +371,8 @@ def provision_on_council(council_code=None):
             frappe.flags.ignore_permissions = False
         profile_data["phone"] = p.phone or profile_data.get("phone", "")
         profile_data["company_name"] = p.company_name
-        profile_data["business_type"] = p.business_type
+        _valid_biz_types = {"", "Sole Trader", "Limited Company", "Partnership", "Other"}
+        profile_data["business_type"] = p.business_type if p.business_type in _valid_biz_types else ""
         # UPE user_role is authoritative — override the User-role-derived value
         profile_data["user_role"] = p.user_role or profile_data.get("user_role", "Individual")
         profile_data["physical_flat_unit"] = getattr(p, "physical_flat_unit", None)
@@ -439,6 +440,89 @@ def provision_on_council(council_code=None):
             "is_active": 1,
         }).insert(ignore_permissions=True)
     frappe.db.commit()
+
+    return {
+        "success": True,
+        "auto_login_url": api_url + auto_login_path,
+    }
+
+
+@frappe.whitelist()
+def provision_ao_to_council(ao_token, council_code):
+    """
+    Hub: complete AO registration after Keycloak sign-up.
+    Validates the invitation token on the council, then provisions the AO
+    (is_officer=1) to that council and returns a one-time auto-login URL.
+    """
+    user = frappe.session.user
+    if user in ("Guest", "Administrator"):
+        frappe.throw(_("You must be logged in"), frappe.PermissionError)
+
+    entry = frappe.db.get_value(
+        "Council Registry Entry",
+        {"council_code": council_code, "is_active": 1, "parenttype": "CouncilsOnline Settings"},
+        ["name", "council_code", "council_name", "api_url"],
+        as_dict=True,
+    )
+    if not entry:
+        frappe.throw(_("Council not found in registry"))
+
+    api_url = (entry.api_url or "").rstrip("/")
+    from frappe.utils.password import get_decrypted_password
+    service_token = get_decrypted_password("CouncilsOnline Settings", "CouncilsOnline Settings", "hub_service_token") or ""
+
+    import requests as req
+
+    # Step 1: validate the officer invitation token on the council
+    try:
+        validate_resp = req.post(
+            f"{api_url}/api/method/councilsonline.api.officer.validate_officer_token_for_hub",
+            json={"token": ao_token, "service_token": service_token},
+            timeout=15,
+        )
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "AO token validation error")
+        frappe.throw(_("Could not reach council site: ") + str(e))
+
+    if validate_resp.status_code != 200:
+        frappe.throw(_("Council returned error {0} validating AO token").format(validate_resp.status_code))
+
+    inv_data = validate_resp.json().get("message") or {}
+    officer_name = inv_data.get("officer_name") or ""
+    officer_email = inv_data.get("officer_email") or user
+    organization = inv_data.get("organization") or ""
+
+    # Step 2: build AO profile_data and provision to council
+    hub_url = frappe.utils.get_url().rstrip("/")
+    parts = officer_name.strip().split(" ", 1)
+    first_name = parts[0]
+    last_name = parts[1] if len(parts) > 1 else ""
+
+    profile_data = {
+        "hub_url": hub_url,
+        "first_name": first_name,
+        "last_name": last_name,
+        "phone": "",
+        "user_role": "Authorising Officer",
+        "is_officer": 1,
+        "organization": organization,
+    }
+
+    try:
+        provision_resp = req.post(
+            f"{api_url}/api/method/councilsonline.api.auth.provision_agent_from_hub",
+            json={"agent_email": officer_email, "profile_data": profile_data, "service_token": service_token},
+            timeout=15,
+        )
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "AO provision error")
+        frappe.throw(_("Could not provision AO to council: ") + str(e))
+
+    if provision_resp.status_code != 200:
+        frappe.throw(_("Council returned error {0} provisioning AO").format(provision_resp.status_code))
+
+    data = provision_resp.json().get("message") or {}
+    auto_login_path = data.get("auto_login_path") or "/frontend/"
 
     return {
         "success": True,

@@ -54,6 +54,8 @@ async function loginAdmin(page: Page) {
 	await page.fill("input#login_password, input[name='pwd']", ADMIN_PASSWORD)
 	await page.click(".btn-login, button[type='submit']")
 	await page.waitForURL("**/app**", { timeout: 20_000 })
+	// Navigate to a stable endpoint so post-login redirect chain settles
+	await page.goto(`${BASE}/api/method/frappe.ping`, { waitUntil: "domcontentloaded", timeout: 20_000 })
 }
 
 async function loginAs(page: Page, email: string) {
@@ -289,7 +291,7 @@ test.beforeAll(async ({ browser }) => {
 		firstName: "Indie",
 		lastName: "Applicant",
 		role: "Applicant",
-		businessType: "Individual",
+		businessType: "",
 		phone: "+64211112002",
 		city: "Wellington",
 		postcode: "6011",

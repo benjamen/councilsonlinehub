@@ -20,6 +20,7 @@ import { test, expect, Page } from "@playwright/test"
 // ---------------------------------------------------------------------------
 
 const BASE = process.env.BASE_URL || "http://127.0.0.1:8090"
+const WDC_URL = process.env.WDC_URL || "http://127.0.0.1:8092"  // real WDC council site
 const WDC_CODE = "WDC"
 const PASSWORD = "HubTest2026!"
 const ADMIN_EMAIL = "Administrator"
@@ -52,10 +53,18 @@ async function loginAdmin(page: Page) {
 }
 
 async function loginAs(page: Page, email: string) {
+	// Clear any existing session via the API (no redirect complications)
+	await page.context().request.get(`${BASE}/api/method/logout`)
+
+	// Navigate to Frappe desk login page — has email/password inputs (unlike the Vue SSO page)
 	await page.goto(`${BASE}/login`)
-	await page.fill("input#login_email, input[name='usr']", email)
-	await page.fill("input#login_password, input[name='pwd']", PASSWORD)
+	await page.waitForLoadState("networkidle")
+
+	// Fill in credentials and submit
+	await page.fill("#login_email, input[name='usr']", email)
+	await page.fill("#login_password, input[name='pwd']", PASSWORD)
 	await page.click(".btn-login, button[type='submit']")
+
 	// Website users land on /frontend, desk users on /app — wait for either
 	await page.waitForURL(/\/(frontend|app)/, { timeout: 20_000 })
 }
@@ -67,6 +76,10 @@ async function logout(page: Page) {
 
 /** POST to a Frappe API method using the current page session */
 async function callAPI(page: Page, method: string, body: Record<string, unknown>) {
+	return callAPIOn(page, BASE, method, body)
+}
+
+async function callAPIOn(page: Page, base: string, method: string, body: Record<string, unknown>) {
 	return page.evaluate(
 		async ({ method, body, base }) => {
 			const csrf =
@@ -85,7 +98,7 @@ async function callAPI(page: Page, method: string, body: Record<string, unknown>
 			})
 			return r.json()
 		},
-		{ method, body, base: BASE },
+		{ method, body, base },
 	)
 }
 
@@ -108,7 +121,7 @@ async function createPersona(
 		officers?: Array<{ first_name: string; last_name: string; email: string; phone: string }>
 	},
 ) {
-	// 1. Create User
+	// 1. Create User — include new_password in the insert so User.validate() sets it during before_insert
 	await callAPI(page, "frappe.client.insert", {
 		doc: {
 			doctype: "User",
@@ -206,14 +219,19 @@ async function getMembership(page: Page, userEmail: string, councilCode: string)
 }
 
 /** Navigate to councils page and register with WDC. Returns the auto_login_url. */
-async function registerWithCouncil(page: Page, councilCode: string = WDC_CODE): Promise<string | null> {
+async function registerWithCouncil(
+	page: Page,
+	screenshotPrefix: string,
+	councilCode: string = WDC_CODE,
+): Promise<string | null> {
 	await page.goto(`${BASE}/frontend/hub/councils`)
 	await expect(page.locator("h1").first()).toContainText("Councils", { timeout: 15_000 })
+	await page.screenshot({ path: `playwright-report/hub-provisioning/${screenshotPrefix}-1-councils-page.png` })
 
-	// Find council row containing the WDC/Whangarei text and click Register
-	// Give the API calls 30s to complete (local dev server can be slow on first load)
+	// Find the Register button (council list should be loaded)
 	const registerBtn = page.locator("button").filter({ hasText: /^Register$/ }).first()
 	await expect(registerBtn).toBeVisible({ timeout: 30_000 })
+	await page.screenshot({ path: `playwright-report/hub-provisioning/${screenshotPrefix}-2-register-visible.png` })
 
 	let autoLoginUrl: string | null = null
 
@@ -223,7 +241,15 @@ async function registerWithCouncil(page: Page, councilCode: string = WDC_CODE): 
 		{ timeout: 45_000 },
 	)
 
+	// Stub window.open to prevent the council new tab from opening.
+	// Both sites run on 127.0.0.1 — hub_auto_login on port 8092 sets a sid cookie that
+	// overwrites the hub's sid (same domain), breaking the main tab's session.
+	// By suppressing window.open, the Vue component still calls loadCouncils() after
+	// 2 seconds which is all we need to show the "Open Portal" link.
+	await page.evaluate(() => { (window as any).open = () => null })
+
 	await registerBtn.click()
+	await page.screenshot({ path: `playwright-report/hub-provisioning/${screenshotPrefix}-3-registering.png` })
 
 	try {
 		const resp = await responsePromise
@@ -233,10 +259,11 @@ async function registerWithCouncil(page: Page, councilCode: string = WDC_CODE): 
 		// Response interception failed — still check UI
 	}
 
-	// "Open Portal" link should appear (button changes to link)
+	// "Open Portal" link should appear once loadCouncils() runs (2s after provision)
 	await expect(page.locator("a").filter({ hasText: /Open Portal/ }).first()).toBeVisible({
 		timeout: 30_000,
 	})
+	await page.screenshot({ path: `playwright-report/hub-provisioning/${screenshotPrefix}-4-open-portal.png` })
 
 	return autoLoginUrl
 }
@@ -249,31 +276,47 @@ test.beforeAll(async ({ browser }) => {
 	const page = await browser.newPage()
 	await loginAdmin(page)
 
-	// Configure hub settings so provision_on_council works against the hub itself:
-	//   • hub_service_token → used to authenticate service-to-service calls
-	//   • WDC api_url → points to the hub (127.0.0.1:8090), which also has councilsonline installed
 	const TEST_TOKEN = "hubtest-service-token-2026"
-	// set_value handles password fields correctly (frappe.client.save would mask it)
-	await callAPI(page, "frappe.client.set_value", {
-		doctype: "CouncilsOnline Settings",
-		name: "CouncilsOnline Settings",
-		fieldname: "hub_service_token",
-		value: TEST_TOKEN,
-	})
-	// Update WDC api_url to point at the hub itself so provision calls work without whangarei running
+
+	// 1. Update WDC api_url first (frappe.client.save masks password fields,
+	//    so we must set hub_service_token AFTER this save)
 	const settingsDoc = await callAPI(page, "frappe.client.get", {
 		doctype: "CouncilsOnline Settings",
 		name: "CouncilsOnline Settings",
 	})
 	if (settingsDoc.message) {
 		const doc = settingsDoc.message
-		// Don't overwrite hub_service_token (password field masking) — we set it above
 		for (const entry of (doc.council_registry || [])) {
 			if (entry.council_code === "WDC") {
-				entry.api_url = BASE
+				entry.api_url = WDC_URL
 			}
 		}
 		await callAPI(page, "frappe.client.save", { doc })
+	}
+
+	// 2. Set service token AFTER the save so it isn't masked by frappe.client.save
+	await callAPI(page, "frappe.client.set_value", {
+		doctype: "CouncilsOnline Settings",
+		name: "CouncilsOnline Settings",
+		fieldname: "hub_service_token",
+		value: TEST_TOKEN,
+	})
+	// Sync the token to the council site as well
+	if (WDC_URL !== BASE) {
+		const creds = Buffer.from(`${ADMIN_EMAIL}:${ADMIN_PASSWORD}`).toString("base64")
+		await fetch(`${WDC_URL}/api/method/frappe.client.set_value`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Basic ${creds}`,
+			},
+			body: JSON.stringify({
+				doctype: "CouncilsOnline Settings",
+				name: "CouncilsOnline Settings",
+				fieldname: "hub_service_token",
+				value: TEST_TOKEN,
+			}),
+		}).catch(() => null)
 	}
 
 	// Clean up any stale data from previous runs
@@ -303,7 +346,7 @@ test.beforeAll(async ({ browser }) => {
 		firstName: "Indie",
 		lastName: "Applicant",
 		role: "Applicant",
-		businessType: "Individual",
+		businessType: "",
 		phone: "+64211111002",
 		city: "Wellington",
 		postcode: "6011",
@@ -442,8 +485,7 @@ test.describe("Persona 1 — Individual Agent", () => {
 		await loginAs(page, "indiv-agent@hubtest.nz")
 		await page.screenshot({ path: "playwright-report/hub-provisioning/01-indiv-agent-login.png" })
 
-		const autoLoginUrl = await registerWithCouncil(page)
-		await page.screenshot({ path: "playwright-report/hub-provisioning/01-indiv-agent-registered.png" })
+		const autoLoginUrl = await registerWithCouncil(page, "01-indiv-agent")
 
 		// Verify membership via admin session
 		await logout(page)
@@ -472,8 +514,7 @@ test.describe("Persona 2 — Individual Applicant", () => {
 		await loginAs(page, "indiv-applicant@hubtest.nz")
 		await page.screenshot({ path: "playwright-report/hub-provisioning/02-indiv-applicant-login.png" })
 
-		const autoLoginUrl = await registerWithCouncil(page)
-		await page.screenshot({ path: "playwright-report/hub-provisioning/02-indiv-applicant-registered.png" })
+		const autoLoginUrl = await registerWithCouncil(page, "02-indiv-applicant")
 
 		await logout(page)
 		await loginAdmin(page)
@@ -497,8 +538,7 @@ test.describe("Persona 3 — Company Agent (no staff)", () => {
 		await loginAs(page, "company-agent-solo@hubtest.nz")
 		await page.screenshot({ path: "playwright-report/hub-provisioning/03-company-agent-solo-login.png" })
 
-		const autoLoginUrl = await registerWithCouncil(page)
-		await page.screenshot({ path: "playwright-report/hub-provisioning/03-company-agent-solo-registered.png" })
+		const autoLoginUrl = await registerWithCouncil(page, "03-company-agent-solo")
 
 		await logout(page)
 		await loginAdmin(page)
@@ -532,8 +572,7 @@ test.describe("Persona 4 — Company Applicant (no staff)", () => {
 		await loginAs(page, "company-applicant-solo@hubtest.nz")
 		await page.screenshot({ path: "playwright-report/hub-provisioning/04-company-applicant-solo-login.png" })
 
-		const autoLoginUrl = await registerWithCouncil(page)
-		await page.screenshot({ path: "playwright-report/hub-provisioning/04-company-applicant-solo-registered.png" })
+		const autoLoginUrl = await registerWithCouncil(page, "04-company-applicant-solo")
 
 		await logout(page)
 		await loginAdmin(page)
@@ -565,12 +604,7 @@ test.describe("Persona 5 — Company Agent (with staff)", () => {
 		await loginAs(page, "company-agent-staff@hubtest.nz")
 		await page.screenshot({ path: "playwright-report/hub-provisioning/05-company-agent-staff-login.png" })
 
-		// Navigate to hub dashboard first to verify team visibility
-		await page.goto(`${BASE}/frontend/hub/dashboard`)
-		await page.screenshot({ path: "playwright-report/hub-provisioning/05-company-agent-staff-dashboard.png" })
-
-		const autoLoginUrl = await registerWithCouncil(page)
-		await page.screenshot({ path: "playwright-report/hub-provisioning/05-company-agent-staff-registered.png" })
+		const autoLoginUrl = await registerWithCouncil(page, "05-company-agent-staff")
 
 		await logout(page)
 		await loginAdmin(page)
@@ -612,8 +646,7 @@ test.describe("Persona 6 — Company Applicant (with staff)", () => {
 		await loginAs(page, "company-applicant-staff@hubtest.nz")
 		await page.screenshot({ path: "playwright-report/hub-provisioning/06-company-applicant-staff-login.png" })
 
-		const autoLoginUrl = await registerWithCouncil(page)
-		await page.screenshot({ path: "playwright-report/hub-provisioning/06-company-applicant-staff-registered.png" })
+		const autoLoginUrl = await registerWithCouncil(page, "06-company-applicant-staff")
 
 		await logout(page)
 		await loginAdmin(page)

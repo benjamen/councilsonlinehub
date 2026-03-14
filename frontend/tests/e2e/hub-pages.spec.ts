@@ -6,7 +6,7 @@ import { test, expect } from "@playwright/test"
  * Site runs the councilsonlinehub app (presence of the app makes it the hub).
  */
 
-const BASE = process.env.BASE_URL || "http://localhost:8092"
+const BASE = process.env.BASE_URL || "http://127.0.0.1:8090"
 
 async function loginAsAdmin(page) {
 	await page.goto(`${BASE}/login`)
@@ -47,7 +47,7 @@ test.describe("Hub Pages", () => {
 	test("hub API - get_council_registry returns data", async ({ page }) => {
 		// Call the API via page.evaluate to use the session
 		const result = await page.evaluate(async () => {
-			const resp = await fetch("/api/method/councilsonline.api.hub.get_council_registry", {
+			const resp = await fetch("/api/method/councilsonlinehub.api.hub.get_council_registry", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -68,7 +68,7 @@ test.describe("Hub Pages", () => {
 		// since Administrator is blocked. Let's just verify the API exists and
 		// the error message is meaningful.
 		const result = await page.evaluate(async () => {
-			const resp = await fetch("/api/method/councilsonline.api.hub.aggregate_requests", {
+			const resp = await fetch("/api/method/councilsonlinehub.api.hub.aggregate_requests", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -89,13 +89,16 @@ test.describe("Hub Pages", () => {
 
 	test("hub/dashboard page renders", async ({ page }) => {
 		await page.goto(`${BASE}/frontend/hub/dashboard`)
-		await page.waitForTimeout(3000)
+		// Wait for URL to settle after Vue Router handles any redirects
+		await page.waitForURL(/\/frontend\/(hub|account)/, { timeout: 10000 }).catch(() => {})
+		await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {})
 
 		const content = await page.content()
 		expect(content).not.toContain("Page Not Found")
 
 		await page.screenshot({ path: "playwright-report/hub-dashboard.png" })
-		console.log("Hub Dashboard title:", await page.title())
+		const title = await page.title().catch(() => "navigation-in-progress")
+		console.log("Hub Dashboard title:", title)
 	})
 
 	test("hub/profile page renders", async ({ page }) => {
@@ -127,6 +130,6 @@ test.describe("Hub Pages", () => {
 		})
 		console.log("get_council_agent_requests:", JSON.stringify(result, null, 2))
 		// Should return a list (possibly empty) or auth error
-		expect([200, 403, 417]).toContain(result.status)
+		expect([200, 401, 403, 417]).toContain(result.status)
 	})
 })

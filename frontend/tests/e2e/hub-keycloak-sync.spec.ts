@@ -9,7 +9,7 @@ import { test, expect } from "@playwright/test"
  * Hub is master — hub data ALWAYS overwrites council-local data on every login.
  */
 
-const BASE = process.env.BASE_URL || "http://localhost:8092"
+const BASE = process.env.BASE_URL || "http://127.0.0.1:8090"
 const TEST_EMAIL = "kc-sync-e2e@councilstest.nz"
 const ADMIN_PASS = "admin123"
 
@@ -39,8 +39,7 @@ async function loginAdmin(page) {
 	await page.fill("input#login_password, input[name='pwd']", ADMIN_PASS)
 	await page.click(".btn-login, button[type='submit']")
 	await page.waitForURL("**/app**", { timeout: 15000 })
-	await page.goto(`${BASE}/frontend/`)
-	await page.waitForTimeout(1500)
+	await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {})
 }
 
 test.describe.serial("Keycloak NZ Sync (_sync_from_hub — hub is master)", () => {
@@ -82,7 +81,7 @@ test.describe.serial("Keycloak NZ Sync (_sync_from_hub — hub is master)", () =
 		await loginAdmin(page)
 
 		const result = await page.evaluate(async ({ email, userinfo }) => {
-			const resp = await fetch("/api/method/councilsonline.api.hub.test_sync_nz_attributes", {
+			const resp = await fetch("/api/method/councilsonlinehub.api.hub.test_sync_nz_attributes", {
 				method: "POST",
 				headers: { "Content-Type": "application/json", "X-Frappe-CSRF-Token": window.csrf_token || "" },
 				body: JSON.stringify({
@@ -111,7 +110,7 @@ test.describe.serial("Keycloak NZ Sync (_sync_from_hub — hub is master)", () =
 	test("STEP 2: get_agent_profile_for_council endpoint is callable", async ({ page }) => {
 		await loginAdmin(page)
 		const result = await page.evaluate(async ({ email, token }) => {
-			const resp = await fetch("/api/method/councilsonline.api.hub.get_agent_profile_for_council", {
+			const resp = await fetch("/api/method/councilsonlinehub.api.hub.get_agent_profile_for_council", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ agent_email: email, service_token: token }),
@@ -163,7 +162,7 @@ test.describe.serial("Keycloak NZ Sync (_sync_from_hub — hub is master)", () =
 			mailing_type: "Same as Physical",
 		}
 		const applyResult = await page.evaluate(async ({ email, data }) => {
-			const resp = await fetch("/api/method/councilsonline.api.hub.test_apply_hub_data", {
+			const resp = await fetch("/api/method/councilsonlinehub.api.hub.test_apply_hub_data", {
 				method: "POST",
 				headers: { "Content-Type": "application/json", "X-Frappe-CSRF-Token": window.csrf_token || "" },
 				body: JSON.stringify({ target_email: email, hub_data_json: JSON.stringify(data) }),
@@ -200,7 +199,7 @@ test.describe.serial("Keycloak NZ Sync (_sync_from_hub — hub is master)", () =
 	test("STEP 5: Non-NZ azp claim is correctly ignored by sync_nz_attributes", async ({ page }) => {
 		await loginAdmin(page)
 		await page.evaluate(async ({ email }) => {
-			await fetch("/api/method/councilsonline.api.hub.test_sync_nz_attributes", {
+			await fetch("/api/method/councilsonlinehub.api.hub.test_sync_nz_attributes", {
 				method: "POST",
 				headers: { "Content-Type": "application/json", "X-Frappe-CSRF-Token": window.csrf_token || "" },
 				body: JSON.stringify({
