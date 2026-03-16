@@ -38,7 +38,7 @@ rm -rf node_modules 2>/dev/null \
   || true
 rm -rf node_modules.bak.* 2>/dev/null || true
 
-yarn install --frozen-lockfile
+yarn install
 yarn build
 
 # ── Python / Frappe ───────────────────────────────────────────────────────────
