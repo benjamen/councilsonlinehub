@@ -66,6 +66,18 @@
           <p class="text-gray-600">{{ agent.bio }}</p>
         </div>
 
+        <!-- Invite to Quote -->
+        <div v-if="session.user && session.user !== 'Guest'" class="mt-6 pt-6 border-t border-gray-100">
+          <button @click="openInviteModal"
+            class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Invite to Quote
+          </button>
+          <p class="text-xs text-gray-400 mt-2">Select one of your active applications to invite this agent to quote.</p>
+        </div>
+
         <!-- Contact -->
         <div class="mt-6 pt-6 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div v-if="agent.contact_email">
@@ -137,6 +149,60 @@
         Back to Marketplace
       </router-link>
     </div>
+
+    <!-- Invite to Quote Modal -->
+    <div v-if="showInviteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <h3 class="text-base font-semibold text-gray-900 mb-1">Invite {{ agent?.display_name }} to Quote</h3>
+        <p class="text-xs text-gray-500 mb-4">Select an active application to invite this agent.</p>
+
+        <div v-if="inviteSuccess" class="text-center py-6">
+          <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <p class="text-sm font-semibold text-gray-900">Invite sent!</p>
+          <p class="text-xs text-gray-500 mt-1">{{ agent?.display_name }} will be notified to submit a quote.</p>
+          <button @click="showInviteModal = false" class="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors">
+            Done
+          </button>
+        </div>
+
+        <div v-else>
+          <div v-if="requestsLoading" class="space-y-2 animate-pulse mb-4">
+            <div v-for="i in 3" :key="i" class="h-10 bg-gray-100 rounded-lg"></div>
+          </div>
+          <div v-else-if="!myRequests.length" class="text-sm text-gray-500 text-center py-4 mb-4">
+            No active applications found.
+          </div>
+          <div v-else class="space-y-2 mb-4 max-h-56 overflow-y-auto">
+            <label v-for="req in myRequests" :key="req.name"
+              class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
+              :class="selectedRequest?.name === req.name ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'">
+              <input type="radio" :value="req" v-model="selectedRequest" class="text-blue-600" />
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-800 truncate">{{ req.request_number }}</p>
+                <p class="text-xs text-gray-500 truncate">{{ req.request_type }} — {{ req.council_name }}</p>
+              </div>
+            </label>
+          </div>
+
+          <p v-if="inviteError" class="text-xs text-red-600 mb-3">{{ inviteError }}</p>
+
+          <div class="flex gap-3">
+            <button @click="sendInvite" :disabled="inviting || !selectedRequest"
+              class="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors">
+              {{ inviting ? 'Sending…' : 'Send Invite' }}
+            </button>
+            <button @click="showInviteModal = false"
+              class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -145,11 +211,59 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { apiClient } from '@/services/api/base'
 import HubNav from '@/components/HubNav.vue'
+import { session } from '@/data/session'
 
 const route = useRoute()
 
 const agent = ref(null)
 const loading = ref(true)
+
+// Invite to Quote
+const showInviteModal = ref(false)
+const myRequests = ref([])
+const requestsLoading = ref(false)
+const selectedRequest = ref(null)
+const inviting = ref(false)
+const inviteSuccess = ref(false)
+const inviteError = ref('')
+
+async function openInviteModal() {
+  showInviteModal.value = true
+  inviteSuccess.value = false
+  inviteError.value = ''
+  selectedRequest.value = null
+  if (!myRequests.value.length) {
+    requestsLoading.value = true
+    try {
+      const all = await apiClient.call('councilsonlinehub.api.hub.aggregate_requests')
+      myRequests.value = (all || []).filter(r =>
+        !['Approved', 'Granted', 'Declined', 'Withdrawn'].includes(r.workflow_state)
+      )
+    } catch {
+      myRequests.value = []
+    } finally {
+      requestsLoading.value = false
+    }
+  }
+}
+
+async function sendInvite() {
+  if (!selectedRequest.value) return
+  inviting.value = true
+  inviteError.value = ''
+  try {
+    await apiClient.call('councilsonlinehub.api.hub.invite_agent_to_quote', {
+      agent_profile: agent.value.user,
+      request_name: selectedRequest.value.name,
+      council_url: selectedRequest.value.council_url,
+    })
+    inviteSuccess.value = true
+  } catch (e) {
+    inviteError.value = e?.message || 'Failed to send invite'
+  } finally {
+    inviting.value = false
+  }
+}
 
 function getInitials(name) {
   if (!name) return '?'
