@@ -1,0 +1,2 @@
+import{C as a,r as i}from"./index-BmDR0qV2.js";const c=a("error",()=>{const r=i([]);function o(e){const t={id:Date.now(),timestamp:new Date().toISOString(),message:e.message||"Unknown error",type:e.type||"error",context:e.context||{}};r.value.push(t)}function n(e){r.value=r.value.filter(t=>t.id!==e)}function s(){r.value=[]}return{errors:r,addError:o,removeError:n,clearErrors:s}});export{c as useErrorStore};
+//# sourceMappingURL=errorStore-BqsSvbhE.js.map

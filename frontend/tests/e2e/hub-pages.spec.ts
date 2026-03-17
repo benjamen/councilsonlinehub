@@ -29,7 +29,8 @@ test.describe("Hub Pages", () => {
 
 	test("hub/councils page loads with council registry", async ({ page }) => {
 		await page.goto(`${BASE}/frontend/hub/councils`)
-		await page.waitForTimeout(3000)
+		await page.waitForURL(/\/frontend\/(hub|account)/, { timeout: 10000 }).catch(() => {})
+		await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {})
 
 		// Should show the councils page
 		const content = await page.content()
@@ -103,7 +104,8 @@ test.describe("Hub Pages", () => {
 
 	test("hub/profile page renders", async ({ page }) => {
 		await page.goto(`${BASE}/frontend/hub/profile`)
-		await page.waitForTimeout(3000)
+		await page.waitForURL(/\/frontend\/(hub|account)/, { timeout: 10000 }).catch(() => {})
+		await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {})
 
 		const content = await page.content()
 		expect(content).not.toContain("Page Not Found")

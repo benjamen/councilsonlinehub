@@ -842,3 +842,209 @@ def get_agent_detail(agent_name=None):
             limit=20,
         ),
     }
+
+
+# ---------------------------------------------------------------------------
+# NZ-547: Messaging proxy (hub → council)
+# ---------------------------------------------------------------------------
+
+def _get_council_entry(council_code):
+    settings = frappe.get_single("CouncilsOnline Settings")
+    for e in (getattr(settings, "council_registry", []) or []):
+        if e.council_code == council_code:
+            return e
+    frappe.throw(_("Council not found"), frappe.DoesNotExistError)
+
+
+@frappe.whitelist()
+def get_request_messages(council_code, request_id):
+    """Proxy: fetch communications for a request from the council site."""
+    user = frappe.session.user
+    if user in ("Guest", "Administrator"):
+        frappe.throw(_("You must be logged in"), frappe.PermissionError)
+
+    entry = _get_council_entry(council_code)
+    from frappe.utils.password import get_decrypted_password
+    token = get_decrypted_password("CouncilsOnline Settings", "CouncilsOnline Settings", "hub_service_token")
+    import requests as req
+    resp = req.get(
+        f"{entry.api_url.rstrip('/')}/api/method/councilsonline.api.requests.get_communications_from_hub",
+        params={"request_id": request_id, "agent_email": user, "service_token": token},
+        timeout=8,
+    )
+    if resp.status_code == 200:
+        return resp.json().get("message") or {"data": []}
+    frappe.throw(_("Could not retrieve messages from council"))
+
+
+@frappe.whitelist()
+def send_hub_request_message(council_code, request_id, subject, message):
+    """Proxy: send a message to the council on behalf of the logged-in user."""
+    user = frappe.session.user
+    if user in ("Guest", "Administrator"):
+        frappe.throw(_("You must be logged in"), frappe.PermissionError)
+
+    entry = _get_council_entry(council_code)
+    from frappe.utils.password import get_decrypted_password
+    token = get_decrypted_password("CouncilsOnline Settings", "CouncilsOnline Settings", "hub_service_token")
+    import requests as req
+    resp = req.post(
+        f"{entry.api_url.rstrip('/')}/api/method/councilsonline.api.requests.send_message_from_hub",
+        json={"request_id": request_id, "subject": subject, "message": message,
+              "sender_email": user, "service_token": token},
+        headers={"Content-Type": "application/json"},
+        timeout=8,
+    )
+    if resp.status_code == 200:
+        return resp.json().get("message") or {"status": "ok"}
+    frappe.throw(_("Could not send message to council"))
+
+
+# ---------------------------------------------------------------------------
+# NZ-674: Agent marketplace profile management
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def get_my_agent_profile():
+    """Return the current user's Agent Profile (marketplace listing data)."""
+    user = frappe.session.user
+    if user in ("Guest", "Administrator"):
+        frappe.throw(_("You must be logged in"), frappe.PermissionError)
+
+    profile = frappe.db.get_value("Agent Profile", {"user": user}, "name")
+    if not profile:
+        return {"exists": False}
+
+    doc = frappe.get_doc("Agent Profile", profile)
+    return {
+        "exists": True,
+        "name": doc.name,
+        "display_name": doc.display_name or "",
+        "bio": doc.bio or "",
+        "is_listed": int(doc.is_listed or 0),
+        "status": doc.status or "Active",
+        "business_type": doc.business_type or "",
+        "contact_email": doc.contact_email or "",
+        "contact_phone": doc.contact_phone or "",
+        "website": doc.website or "",
+        "services": [s.service_name for s in (doc.services or [])],
+        "areas": [a.area_name for a in (doc.areas or [])],
+    }
+
+
+@frappe.whitelist()
+def save_agent_profile(is_listed, status, services=None, areas=None,
+                       bio=None, display_name=None, contact_email=None,
+                       contact_phone=None, website=None):
+    """Update the current user's Agent Profile marketplace fields."""
+    user = frappe.session.user
+    if user in ("Guest", "Administrator"):
+        frappe.throw(_("You must be logged in"), frappe.PermissionError)
+
+    import json as _json
+    services_list = _json.loads(services) if isinstance(services, str) else (services or [])
+    areas_list = _json.loads(areas) if isinstance(areas, str) else (areas or [])
+
+    profile_name = frappe.db.get_value("Agent Profile", {"user": user}, "name")
+    if not profile_name:
+        frappe.throw(_("Agent Profile not found. Complete your hub profile first."))
+
+    doc = frappe.get_doc("Agent Profile", profile_name)
+    doc.is_listed = int(is_listed)
+    doc.status = status
+    if bio is not None:
+        doc.bio = bio
+    if display_name is not None:
+        doc.display_name = display_name
+    if contact_email is not None:
+        doc.contact_email = contact_email
+    if contact_phone is not None:
+        doc.contact_phone = contact_phone
+    if website is not None:
+        doc.website = website
+
+    doc.services = []
+    for svc in services_list:
+        if svc:
+            doc.append("services", {"service_name": svc})
+
+    doc.areas = []
+    for area in areas_list:
+        if area:
+            doc.append("areas", {"area_name": area})
+
+    doc.save(ignore_permissions=True)
+    return {"status": "ok"}
+
+
+# ---------------------------------------------------------------------------
+# NZ-676: Council registry admin
+# ---------------------------------------------------------------------------
+
+def _require_system_manager():
+    if "System Manager" not in frappe.get_roles(frappe.session.user):
+        frappe.throw(_("System Manager role required"), frappe.PermissionError)
+
+
+@frappe.whitelist()
+def get_council_registry_all():
+    """Return all council registry entries (active and inactive). System Manager only."""
+    _require_system_manager()
+    settings = frappe.get_single("CouncilsOnline Settings")
+    return [
+        {
+            "name": e.name,
+            "council_name": e.council_name,
+            "council_code": e.council_code,
+            "api_url": e.api_url,
+            "is_active": int(e.is_active or 0),
+        }
+        for e in (getattr(settings, "council_registry", []) or [])
+    ]
+
+
+@frappe.whitelist()
+def save_council_registry_entry(council_name, council_code, api_url, is_active, entry_name=None):
+    """Create or update a council registry entry. System Manager only."""
+    _require_system_manager()
+    settings = frappe.get_single("CouncilsOnline Settings")
+    registry = getattr(settings, "council_registry", []) or []
+
+    if entry_name:
+        for e in registry:
+            if e.name == entry_name:
+                e.council_name = council_name
+                e.council_code = council_code
+                e.api_url = api_url.rstrip("/")
+                e.is_active = int(is_active)
+                break
+        else:
+            frappe.throw(_("Entry not found"))
+    else:
+        # Check for duplicate council_code
+        for e in registry:
+            if e.council_code == council_code:
+                frappe.throw(_("A council with code {0} already exists").format(council_code))
+        settings.append("council_registry", {
+            "council_name": council_name,
+            "council_code": council_code,
+            "api_url": api_url.rstrip("/"),
+            "is_active": int(is_active),
+        })
+
+    settings.save(ignore_permissions=True)
+    return {"status": "ok"}
+
+
+@frappe.whitelist()
+def delete_council_registry_entry(entry_name):
+    """Delete a council registry entry. System Manager only."""
+    _require_system_manager()
+    settings = frappe.get_single("CouncilsOnline Settings")
+    registry = getattr(settings, "council_registry", []) or []
+    original_len = len(registry)
+    settings.council_registry = [e for e in registry if e.name != entry_name]
+    if len(settings.council_registry) == original_len:
+        frappe.throw(_("Entry not found"))
+    settings.save(ignore_permissions=True)
+    return {"status": "ok"}

@@ -37,6 +37,12 @@ const routes = [
     name: "HubTeam",
     component: () => import("@/pages/HubTeam.vue"),
   },
+  // Admin
+  {
+    path: "/hub/admin/councils",
+    name: "HubAdminCouncils",
+    component: () => import("@/pages/HubAdminCouncils.vue"),
+  },
   // Agent Marketplace (public)
   {
     path: "/hub/agents",

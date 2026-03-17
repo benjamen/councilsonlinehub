@@ -317,6 +317,14 @@
                     {{ req.workflow_state || 'Draft' }}
                   </span>
                   <span class="flex-shrink-0 text-xs text-gray-400 hidden sm:block">{{ formatDate(req.submitted_date) }}</span>
+                  <button @click="openMessages(req, $event)"
+                    class="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    title="View / send messages">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                  </button>
                   <svg class="w-4 h-4 text-gray-300 group-hover:text-gray-500 flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                   </svg>
@@ -556,12 +564,23 @@
       </div>
     </div>
   </div>
+
+  <!-- Messages modal (NZ-547) -->
+  <HubMessagesModal
+    v-if="showMessagesModal && activeMessage"
+    :council-code="activeMessage.councilCode"
+    :request-id="activeMessage.requestId"
+    :request-number="activeMessage.requestNumber"
+    :council-name="activeMessage.councilName"
+    @close="showMessagesModal = false"
+  />
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { apiClient } from '@/services/api/base'
 import HubNav from '@/components/HubNav.vue'
+import HubMessagesModal from '@/components/HubMessagesModal.vue'
 import { session } from '@/data/session'
 
 const allRequests    = ref([])
@@ -574,6 +593,22 @@ const filterText     = ref('')
 
 const profile        = ref(null)
 const profileLoading = ref(true)
+
+// Messages modal
+const showMessagesModal = ref(false)
+const activeMessage     = ref(null)
+
+function openMessages(req, e) {
+  e.stopPropagation()
+  activeMessage.value = {
+    councilCode:   req.council_code || '',
+    requestId:     req.request_number,
+    requestNumber: req.request_number,
+    councilName:   req.council_name || '',
+    councilUrl:    req.council_url  || '',
+  }
+  showMessagesModal.value = true
+}
 
 // Quote requests (agent only)
 const quoteRequests     = ref([])

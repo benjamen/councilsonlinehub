@@ -174,6 +174,105 @@
         </div>
       </div>
 
+      <!-- Marketplace Listing (Agents only) — NZ-674 -->
+      <div v-if="isAgent" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-semibold text-gray-700">Marketplace Listing</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Control how applicants find you in the agent marketplace.</p>
+          </div>
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <span class="text-sm text-gray-600">Visible</span>
+            <button type="button" @click="agentProfile.is_listed = agentProfile.is_listed ? 0 : 1"
+              class="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none"
+              :class="agentProfile.is_listed ? 'bg-blue-600' : 'bg-gray-300'">
+              <span class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition duration-200"
+                :class="agentProfile.is_listed ? 'translate-x-4' : 'translate-x-0'" />
+            </button>
+          </label>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Display Name</label>
+            <input v-model="agentProfile.display_name" type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Listing Status</label>
+            <select v-model="agentProfile.status"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+              <option>Active</option>
+              <option>Suspended</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-gray-600 mb-1">Bio</label>
+            <textarea v-model="agentProfile.bio" rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Contact Email</label>
+            <input v-model="agentProfile.contact_email" type="email"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">Contact Phone</label>
+            <input v-model="agentProfile.contact_phone" type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-gray-600 mb-1">Website</label>
+            <input v-model="agentProfile.website" type="url" placeholder="https://"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+          </div>
+        </div>
+
+        <!-- Services -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-sm font-medium text-gray-600">Services Offered</label>
+            <button @click="addAgentItem('services', 'service_name')"
+              class="text-sm text-blue-600 hover:text-blue-800 font-medium">+ Add</button>
+          </div>
+          <div v-for="(svc, i) in agentProfile.services" :key="i" class="flex gap-2 mb-2">
+            <input v-model="agentProfile.services[i]" type="text" placeholder="e.g. Resource Consent"
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <button @click="agentProfile.services.splice(i, 1)"
+              class="text-gray-400 hover:text-red-500 px-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <p v-if="!agentProfile.services.length" class="text-xs text-gray-400">No services added</p>
+        </div>
+
+        <!-- Areas -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-sm font-medium text-gray-600">Service Areas</label>
+            <button @click="agentProfile.areas.push('')"
+              class="text-sm text-blue-600 hover:text-blue-800 font-medium">+ Add</button>
+          </div>
+          <div v-for="(area, i) in agentProfile.areas" :key="i" class="flex gap-2 mb-2">
+            <input v-model="agentProfile.areas[i]" type="text" placeholder="e.g. Northland"
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            <button @click="agentProfile.areas.splice(i, 1)"
+              class="text-gray-400 hover:text-red-500 px-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <p v-if="!agentProfile.areas.length" class="text-xs text-gray-400">No areas added</p>
+        </div>
+
+        <p v-if="!agentProfile.exists" class="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+          No Agent Profile found. Your marketplace listing will be created automatically when you first register with a council.
+        </p>
+      </div>
+
       <p v-if="saveError" class="text-sm text-red-600 text-center">{{ saveError }}</p>
       <p v-if="saveSuccess" class="text-sm text-green-600 text-center">{{ saveSuccess }}</p>
     </main>
@@ -199,7 +298,18 @@ const userRole = ref('')
 const directors = ref([])
 const selectedSpecialties = ref([])
 
-const isAgent = computed(() => userRole.value === 'Agent')
+// Agent marketplace profile (NZ-674)
+const agentProfile = reactive({
+  exists: false, is_listed: 1, status: 'Active',
+  display_name: '', bio: '', contact_email: '', contact_phone: '', website: '',
+  services: [], areas: [],
+})
+
+function addAgentItem(listKey) {
+  agentProfile[listKey].push('')
+}
+
+const isAgent = computed(() => userRole.value.toLowerCase().includes('agent'))
 const hasBusinessType = computed(() => !!businessType.value)
 const isLimitedCompany = computed(() => businessType.value === 'Limited Company')
 const isOrganisation = computed(() => businessType.value === 'Organisation')
@@ -222,8 +332,27 @@ function addDirector() {
 }
 
 onMounted(async () => {
+  // Load agent marketplace profile in parallel
+  if (isAgent.value || true) {
+    apiClient.call('councilsonlinehub.api.hub.get_my_agent_profile').then(ap => {
+      if (ap && ap.exists) {
+        Object.assign(agentProfile, {
+          exists: true,
+          is_listed: ap.is_listed ?? 1,
+          status: ap.status || 'Active',
+          display_name: ap.display_name || '',
+          bio: ap.bio || '',
+          contact_email: ap.contact_email || '',
+          contact_phone: ap.contact_phone || '',
+          website: ap.website || '',
+          services: ap.services || [],
+          areas: ap.areas || [],
+        })
+      }
+    }).catch(() => {})
+  }
   try {
-    const data = await apiClient.call('councilsonline.api.hub.get_hub_profile')
+    const data = await apiClient.call('councilsonlinehub.api.hub.get_hub_profile')
     const p = data || {}
     userRole.value = p.user_role || ''
     businessType.value = p.business_type || ''
@@ -264,19 +393,35 @@ async function saveProfile() {
     } : null
     const validDirs = directors.value.filter(d => d.first_name || d.last_name)
 
-    await apiClient.call('councilsonline.api.hub.save_hub_profile', {
-      phone: form.phone, company_name: form.company_name, gst_number: form.gst_number,
-      business_phone: form.business_phone,
-      physical_flat_unit: form.physical_flat_unit, physical_rural_delivery: form.physical_rural_delivery,
-      physical_suburb: form.physical_suburb, physical_city: form.physical_city,
-      physical_postcode: form.physical_postcode, mailing_type: form.mailing_type,
-      mailing_po_box: form.mailing_po_box, mailing_suburb: form.mailing_suburb,
-      mailing_city: form.mailing_city, mailing_postcode: form.mailing_postcode,
-      specialties: JSON.stringify(isAgent.value ? selectedSpecialties.value : []),
-      directors: validDirs.length ? JSON.stringify(validDirs) : undefined,
-      authorising_officer: aoPayload ? JSON.stringify(aoPayload) : undefined,
-      sq1_question: '', sq1_answer: '', sq2_question: '', sq2_answer: '', sq3_question: '', sq3_answer: '',
-    })
+    const saves = [
+      apiClient.call('councilsonlinehub.api.hub.save_hub_profile', {
+        phone: form.phone, company_name: form.company_name, gst_number: form.gst_number,
+        business_phone: form.business_phone,
+        physical_flat_unit: form.physical_flat_unit, physical_rural_delivery: form.physical_rural_delivery,
+        physical_suburb: form.physical_suburb, physical_city: form.physical_city,
+        physical_postcode: form.physical_postcode, mailing_type: form.mailing_type,
+        mailing_po_box: form.mailing_po_box, mailing_suburb: form.mailing_suburb,
+        mailing_city: form.mailing_city, mailing_postcode: form.mailing_postcode,
+        specialties: JSON.stringify(isAgent.value ? selectedSpecialties.value : []),
+        directors: validDirs.length ? JSON.stringify(validDirs) : undefined,
+        authorising_officer: aoPayload ? JSON.stringify(aoPayload) : undefined,
+        sq1_question: '', sq1_answer: '', sq2_question: '', sq2_answer: '', sq3_question: '', sq3_answer: '',
+      }),
+    ]
+    if (isAgent.value && agentProfile.exists) {
+      saves.push(apiClient.call('councilsonlinehub.api.hub.save_agent_profile', {
+        is_listed: agentProfile.is_listed,
+        status: agentProfile.status,
+        bio: agentProfile.bio,
+        display_name: agentProfile.display_name,
+        contact_email: agentProfile.contact_email,
+        contact_phone: agentProfile.contact_phone,
+        website: agentProfile.website,
+        services: JSON.stringify(agentProfile.services.filter(Boolean)),
+        areas: JSON.stringify(agentProfile.areas.filter(Boolean)),
+      }))
+    }
+    await Promise.all(saves)
     saveSuccess.value = 'Profile saved successfully'
     setTimeout(() => { saveSuccess.value = '' }, 3000)
   } catch (e) {

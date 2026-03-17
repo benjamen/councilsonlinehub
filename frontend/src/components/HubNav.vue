@@ -79,6 +79,7 @@ const userName = computed(() => session.user || '')
 // Role detection — lightweight profile check
 const userRole = ref('')
 const pendingQuoteCount = ref(0)
+const isSystemManager = ref(false)
 
 onMounted(async () => {
   try {
@@ -89,6 +90,14 @@ onMounted(async () => {
     if (isAgentUser.value) {
       const quotes = await apiClient.call('councilsonlinehub.api.hub.get_agent_quote_requests')
       pendingQuoteCount.value = (quotes || []).filter(q => q.status === 'Invited').length
+    }
+
+    // Check for System Manager by attempting admin endpoint
+    try {
+      await apiClient.call('councilsonlinehub.api.hub.get_council_registry_all')
+      isSystemManager.value = true
+    } catch {
+      isSystemManager.value = false
     }
   } catch {
     // ignore — nav degrades gracefully
@@ -118,6 +127,10 @@ const navItems = computed(() => {
     // Applicants and guests get: Profile + Find an Agent
     items.push({ to: '/hub/profile', label: 'Profile' })
     items.push({ to: '/hub/agents', label: 'Find an Agent' })
+  }
+
+  if (isSystemManager.value) {
+    items.push({ to: '/hub/admin/councils', label: 'Admin' })
   }
 
   return items
