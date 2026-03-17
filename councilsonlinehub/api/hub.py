@@ -262,6 +262,50 @@ def get_agent_quote_requests():
 
 
 @frappe.whitelist()
+def get_agent_quote_history():
+    """
+    Hub aggregator: fetches ALL quote history for the logged-in agent across all
+    active councils (all statuses: Invited, Drafting, Quoted, Accepted, Declined, Withdrawn).
+    Used by the My Quotes history page (NZ-541).
+    """
+    user = frappe.session.user
+    if user in ("Guest", "Administrator"):
+        frappe.throw(_("You must be logged in"), frappe.PermissionError)
+
+    settings = frappe.get_single("CouncilsOnline Settings")
+    from frappe.utils.password import get_decrypted_password
+    token = get_decrypted_password("CouncilsOnline Settings", "CouncilsOnline Settings", "hub_service_token")
+    registry = getattr(settings, "council_registry", []) or []
+
+    import requests as req
+
+    all_quotes = []
+    for entry in registry:
+        if not entry.is_active:
+            continue
+        api_url = (entry.api_url or "").rstrip("/")
+        if not api_url:
+            continue
+        try:
+            resp = req.get(
+                f"{api_url}/api/method/councilsonline.api.agents.get_agent_quote_requests_for_hub",
+                params={"agent_email": user, "service_token": token, "include_history": 1},
+                timeout=5,
+            )
+            if resp.status_code == 200:
+                data = resp.json().get("message") or []
+                for item in data:
+                    item["council_name"] = entry.council_name
+                    item["council_url"] = api_url
+                    all_quotes.append(item)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), f"Hub quote history aggregate error: {entry.council_name}")
+
+    all_quotes.sort(key=lambda x: x.get("invited_at", ""), reverse=True)
+    return all_quotes
+
+
+@frappe.whitelist()
 def invite_agent_to_quote(agent_profile=None, request_name=None, council_url=None):
     """
     Hub endpoint: applicant invites an agent to quote on one of their applications.

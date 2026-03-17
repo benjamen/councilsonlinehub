@@ -56,6 +56,12 @@ const routes = [
     component: () => import("@/pages/HubAgentDetail.vue"),
     meta: { public: true },
   },
+  // My Quote History (NZ-541)
+  {
+    path: "/hub/my-quotes",
+    name: "HubMyQuotes",
+    component: () => import("@/pages/HubMyQuotes.vue"),
+  },
   // Catch-all: redirect to hub dashboard or login
   {
     path: "/:pathMatch(.*)*",

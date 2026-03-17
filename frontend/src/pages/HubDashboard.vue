@@ -448,10 +448,16 @@
             <div v-if="isAgent" class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
               <div class="flex items-center justify-between mb-3">
                 <h3 class="text-sm font-semibold text-gray-900">Quote Requests</h3>
-                <span v-if="quoteRequests.filter(q => q.status === 'Invited').length"
-                  class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                  {{ quoteRequests.filter(q => q.status === 'Invited').length }} new
-                </span>
+                <div class="flex items-center gap-2">
+                  <span v-if="quoteRequests.filter(q => q.status === 'Invited').length"
+                    class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                    {{ quoteRequests.filter(q => q.status === 'Invited').length }} new
+                  </span>
+                  <router-link to="/hub/my-quotes"
+                    class="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                    History →
+                  </router-link>
+                </div>
               </div>
               <div v-if="quotesLoading" class="space-y-2 animate-pulse">
                 <div v-for="i in 2" :key="i" class="h-12 bg-gray-100 rounded-lg"></div>
@@ -486,9 +492,10 @@
                     ${{ quote.fee_estimate }} · {{ quote.estimated_days }} days
                   </div>
                 </div>
-                <p v-if="quoteRequests.length > 4" class="text-xs text-gray-400 text-center pt-1">
-                  +{{ quoteRequests.length - 4 }} more
-                </p>
+                <router-link v-if="quoteRequests.length > 4" to="/hub/my-quotes"
+                  class="block text-xs text-blue-600 hover:text-blue-700 text-center pt-1 font-medium">
+                  +{{ quoteRequests.length - 4 }} more — View all
+                </router-link>
               </div>
             </div>
 
