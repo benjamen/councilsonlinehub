@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test"
 export default defineConfig({
 	testDir: "./tests/e2e",
 	// All hub regression specs — maps to Jira subtasks NZ-353 to NZ-356 + existing NZ-278–283 subtasks
-	testMatch: /hub-(pages|agent-signup|remaining-coverage|keycloak-sync|provisioning-personas|profile-updates)\.spec\.ts|step(2|3|4|5|6|7|8|9|10|11|12)-(cross-council-hub|agent-quote|pre-application-meeting|application-lodgement|council-receipt-acknowledgement|completeness-check-fir|assessment-project-tasks|notification-determination|consent-decision-nod|conditions-of-consent|monitoring-compliance)\.spec\.js/,
+	testMatch: /hub-(pages|agent-signup|remaining-coverage|keycloak-sync|provisioning-personas|profile-updates)\.spec\.ts|step(2|3|4|5|6|7|8|9|10|11|12|13)-(cross-council-hub|agent-quote|pre-application-meeting|application-lodgement|council-receipt-acknowledgement|completeness-check-fir|assessment-project-tasks|notification-determination|consent-decision-nod|conditions-of-consent|monitoring-compliance|council-reporting)\.spec\.js/,
 	timeout: 90 * 1000,
 	fullyParallel: false,
 	workers: 1,
