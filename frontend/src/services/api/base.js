@@ -55,11 +55,17 @@ export class BaseAPIClient {
 				body: JSON.stringify(args),
 			})
 
-			// 401/403 = Frappe session expired → redirect to login
-			if (response.status === 401 || response.status === 403) {
+			// 401 = session expired → clear session and redirect to login
+			// 403 = permission denied (not a session error) → throw so callers can handle gracefully
+			if (response.status === 401) {
 				session.user = null
 				window.location.href = "/frontend/account/login"
 				return
+			}
+			if (response.status === 403) {
+				const err = new Error("PermissionError")
+				err.status = 403
+				throw err
 			}
 
 			if (!response.ok) {
