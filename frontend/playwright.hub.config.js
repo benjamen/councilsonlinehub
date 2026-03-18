@@ -1,7 +1,8 @@
 import { defineConfig, devices } from "@playwright/test"
 export default defineConfig({
 	testDir: "./tests/e2e",
-	testMatch: /hub-(pages|agent-signup|remaining-coverage|keycloak-sync)\.spec\.ts/,
+	// All hub regression specs — maps to Jira subtasks NZ-353 to NZ-356 + existing NZ-278–283 subtasks
+	testMatch: /hub-(pages|agent-signup|remaining-coverage|keycloak-sync|provisioning-personas|profile-updates)\.spec\.ts/,
 	timeout: 90 * 1000,
 	fullyParallel: false,
 	workers: 1,

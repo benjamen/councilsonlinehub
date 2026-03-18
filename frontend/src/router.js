@@ -43,6 +43,31 @@ const routes = [
     name: "HubAdminCouncils",
     component: () => import("@/pages/HubAdminCouncils.vue"),
   },
+  {
+    path: "/hub/admin/councils/:councilCode/settings",
+    name: "HubAdminCouncilSettings",
+    component: () => import("@/pages/HubAdminCouncilSettings.vue"),
+  },
+  {
+    path: "/hub/admin/councils/:councilCode/users",
+    name: "HubAdminCouncilUsers",
+    component: () => import("@/pages/HubAdminCouncilUsers.vue"),
+  },
+  {
+    path: "/hub/admin/users",
+    name: "HubAdminUsers",
+    component: () => import("@/pages/HubAdminUsers.vue"),
+  },
+  {
+    path: "/hub/admin/platform-users",
+    name: "HubAdminPlatformUsers",
+    component: () => import("@/pages/HubAdminPlatformUsers.vue"),
+  },
+  {
+    path: "/hub/admin/stats",
+    name: "HubAdminStats",
+    component: () => import("@/pages/HubAdminStats.vue"),
+  },
   // Agent Marketplace (public)
   {
     path: "/hub/agents",

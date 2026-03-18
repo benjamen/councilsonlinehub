@@ -2,6 +2,34 @@
   <div class="min-h-screen bg-gray-50">
     <HubNav />
 
+    <!-- Admin sub-navigation -->
+    <div class="bg-white border-b border-gray-200">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6">
+        <nav class="flex gap-1 py-1.5 overflow-x-auto">
+          <router-link to="/hub/admin/councils"
+            class="px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors"
+            :class="$route.path.startsWith('/hub/admin/councils') ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'">
+            Councils
+          </router-link>
+          <router-link to="/hub/admin/users"
+            class="px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors"
+            :class="$route.path === '/hub/admin/users' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'">
+            Admin Users
+          </router-link>
+          <router-link to="/hub/admin/platform-users"
+            class="px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors"
+            :class="$route.path === '/hub/admin/platform-users' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'">
+            Platform Users
+          </router-link>
+          <router-link to="/hub/admin/stats"
+            class="px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors"
+            :class="$route.path === '/hub/admin/stats' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'">
+            Statistics
+          </router-link>
+        </nav>
+      </div>
+    </div>
+
     <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <div class="flex items-center justify-between mb-6">
         <div>
@@ -50,6 +78,10 @@
                 </td>
                 <td class="px-5 py-3">
                   <div class="flex gap-2 justify-end">
+                    <router-link :to="`/hub/admin/councils/${c.council_code}/users`"
+                      class="text-xs text-gray-500 hover:text-gray-700 font-medium">Users</router-link>
+                    <router-link :to="`/hub/admin/councils/${c.council_code}/settings`"
+                      class="text-xs text-gray-500 hover:text-gray-700 font-medium">Settings</router-link>
                     <button @click="openModal(c)" class="text-xs text-blue-600 hover:text-blue-800 font-medium">Edit</button>
                     <button @click="confirmDelete(c)" class="text-xs text-red-500 hover:text-red-700 font-medium">Delete</button>
                   </div>

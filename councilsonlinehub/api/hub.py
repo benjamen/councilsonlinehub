@@ -1091,4 +1091,243 @@ def delete_council_registry_entry(entry_name):
     if len(settings.council_registry) == original_len:
         frappe.throw(_("Entry not found"))
     settings.save(ignore_permissions=True)
+
+
+# ---------------------------------------------------------------------------
+# NZ-751 / NZ-757: COL Admin User management
+# ---------------------------------------------------------------------------
+
+MAX_HUB_ADMINS = 3
+
+
+@frappe.whitelist()
+def get_hub_admins():
+    """List all System Manager users on this hub. System Manager only."""
+    _require_system_manager()
+    users = frappe.db.sql(
+        """
+        SELECT u.name AS email, u.full_name, u.first_name, u.last_name,
+               u.enabled, u.last_login
+        FROM `tabUser` u
+        INNER JOIN `tabHas Role` hr ON hr.parent = u.name
+        WHERE hr.role = 'System Manager'
+          AND u.name NOT IN ('Administrator', 'Guest')
+          AND hr.parenttype = 'User'
+        GROUP BY u.name
+        ORDER BY u.creation ASC
+        """,
+        as_dict=True,
+    )
+    return users
+
+
+@frappe.whitelist()
+def invite_hub_admin(email, first_name, last_name):
+    """Invite a new COL admin (System Manager). Max 3 allowed. System Manager only."""
+    _require_system_manager()
+
+    admins = get_hub_admins()
+    if len(admins) >= MAX_HUB_ADMINS:
+        frappe.throw(_("Maximum of {0} COL Admin users allowed").format(MAX_HUB_ADMINS))
+
+    email = email.strip().lower()
+    if not email:
+        frappe.throw(_("Email is required"))
+
+    if frappe.db.exists("User", email):
+        # User already exists — just add the System Manager role if not present
+        user = frappe.get_doc("User", email)
+        roles = [r.role for r in user.roles]
+        if "System Manager" not in roles:
+            user.append("roles", {"role": "System Manager"})
+            user.save(ignore_permissions=True)
+    else:
+        user = frappe.get_doc({
+            "doctype": "User",
+            "email": email,
+            "first_name": first_name.strip(),
+            "last_name": last_name.strip(),
+            "send_welcome_email": 1,
+            "roles": [{"role": "System Manager"}],
+        })
+        user.insert(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {"status": "ok", "email": email}
+
+
+@frappe.whitelist()
+def disable_hub_admin(user_email):
+    """Disable a COL admin user. System Manager only. Cannot disable yourself."""
+    _require_system_manager()
+    user_email = user_email.strip().lower()
+    if user_email == frappe.session.user:
+        frappe.throw(_("You cannot disable your own account"))
+    frappe.db.set_value("User", user_email, "enabled", 0)
+    frappe.db.commit()
+    return {"status": "ok"}
+
+
+@frappe.whitelist()
+def enable_hub_admin(user_email):
+    """Re-enable a COL admin user. System Manager only."""
+    _require_system_manager()
+    frappe.db.set_value("User", user_email.strip().lower(), "enabled", 1)
+    frappe.db.commit()
+    return {"status": "ok"}
+
+
+@frappe.whitelist()
+def delete_hub_admin(user_email):
+    """Delete a COL admin user. System Manager only. Cannot delete yourself."""
+    _require_system_manager()
+    user_email = user_email.strip().lower()
+    if user_email == frappe.session.user:
+        frappe.throw(_("You cannot delete your own account"))
+    if not frappe.db.exists("User", user_email):
+        frappe.throw(_("User not found"))
+    frappe.delete_doc("User", user_email, ignore_permissions=True, force=True)
+    frappe.db.commit()
+    return {"status": "ok"}
+
+
+# ---------------------------------------------------------------------------
+# NZ-753: Council-level settings (test connection)
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def test_council_connection(council_code):
+    """Ping a council API URL to test connectivity. System Manager only."""
+    _require_system_manager()
+    settings = frappe.get_single("CouncilsOnline Settings")
+    registry = getattr(settings, "council_registry", []) or []
+    entry = next((e for e in registry if e.council_code == council_code), None)
+    if not entry:
+        frappe.throw(_("Council not found: {0}").format(council_code))
+
+    import requests as _requests
+    url = entry.api_url.rstrip("/") + "/api/method/ping"
+    try:
+        resp = _requests.get(url, timeout=8)
+        if resp.status_code < 500:
+            return {"status": "ok", "http_status": resp.status_code, "url": url}
+        return {"status": "error", "http_status": resp.status_code, "url": url,
+                "message": "Server returned {0}".format(resp.status_code)}
+    except Exception as exc:
+        return {"status": "error", "url": url, "message": str(exc)}
+
+
+# ---------------------------------------------------------------------------
+# NZ-754: Council users
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def get_council_users(council_code):
+    """Return users provisioned to a specific council. System Manager only."""
+    _require_system_manager()
+    rows = frappe.db.sql(
+        """
+        SELECT u.name AS email, u.full_name, u.enabled, u.last_login,
+               upe.user_type, upe.hub_url
+        FROM `tabUser` u
+        LEFT JOIN `tabUser Profile Extended` upe ON upe.user = u.name
+        WHERE upe.council_code = %(council_code)s
+          AND u.name NOT IN ('Administrator', 'Guest')
+        ORDER BY u.full_name ASC
+        """,
+        {"council_code": council_code},
+        as_dict=True,
+    )
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# NZ-755 / NZ-756: Platform users (Applicants & Agents)
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def get_platform_users(user_type=None):
+    """Return all Applicants or Agents from User Profile Extended. System Manager only."""
+    _require_system_manager()
+    filters = "AND upe.user_type = %(user_type)s" if user_type else ""
+    rows = frappe.db.sql(
+        """
+        SELECT u.name AS email, u.full_name, u.enabled, u.last_login,
+               upe.user_type, upe.hub_url
+        FROM `tabUser` u
+        INNER JOIN `tabUser Profile Extended` upe ON upe.user = u.name
+        WHERE u.name NOT IN ('Administrator', 'Guest')
+          {filters}
+        ORDER BY u.full_name ASC
+        """.format(filters=filters),
+        {"user_type": user_type} if user_type else {},
+        as_dict=True,
+    )
+    return rows
+
+
+@frappe.whitelist()
+def delete_platform_user(user_email):
+    """Disable a platform user (applicant or agent). System Manager only."""
+    _require_system_manager()
+    user_email = user_email.strip().lower()
+    if not frappe.db.exists("User", user_email):
+        frappe.throw(_("User not found"))
+    frappe.db.set_value("User", user_email, "enabled", 0)
+    frappe.db.commit()
+    return {"status": "ok"}
+
+
+@frappe.whitelist()
+def unlock_user_account(user_email):
+    """Re-enable a disabled user account. System Manager only."""
+    _require_system_manager()
+    user_email = user_email.strip().lower()
+    if not frappe.db.exists("User", user_email):
+        frappe.throw(_("User not found"))
+    frappe.db.set_value("User", user_email, "enabled", 1)
+    frappe.db.commit()
+    return {"status": "ok"}
+
+
+# ---------------------------------------------------------------------------
+# NZ-758: Platform-wide statistics
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def get_platform_stats():
+    """Return platform-wide stats. System Manager only."""
+    _require_system_manager()
+    settings = frappe.get_single("CouncilsOnline Settings")
+    registry = getattr(settings, "council_registry", []) or []
+    total_councils = len(registry)
+    active_councils = sum(1 for e in registry if e.is_active)
+    inactive_councils = total_councils - active_councils
+
+    user_counts = frappe.db.sql(
+        """
+        SELECT upe.user_type, COUNT(*) AS cnt
+        FROM `tabUser Profile Extended` upe
+        INNER JOIN `tabUser` u ON u.name = upe.user
+        WHERE u.name NOT IN ('Administrator', 'Guest')
+        GROUP BY upe.user_type
+        """,
+        as_dict=True,
+    )
+    applicants = sum(r.cnt for r in user_counts if r.user_type == "Individual")
+    agents = sum(r.cnt for r in user_counts if r.user_type == "Agent")
+
+    # Total requests across all councils (Consent Request doctype if present)
+    total_requests = 0
+    if frappe.db.table_exists("tabConsent Request"):
+        total_requests = frappe.db.count("Consent Request") or 0
+
+    return {
+        "total_councils": total_councils,
+        "active_councils": active_councils,
+        "inactive_councils": inactive_councils,
+        "total_applicants": applicants,
+        "total_agents": agents,
+        "total_requests": total_requests,
+    }
     return {"status": "ok"}

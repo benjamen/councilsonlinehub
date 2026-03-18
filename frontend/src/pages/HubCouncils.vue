@@ -2,6 +2,23 @@
   <div class="min-h-screen bg-gray-50">
     <HubNav />
 
+    <!-- Toast: council opened in new tab -->
+    <Transition
+      enter-active-class="transition ease-out duration-300"
+      enter-from-class="opacity-0 -translate-y-2"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition ease-in duration-200"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 -translate-y-2"
+    >
+      <div
+        v-if="openedCouncilName"
+        class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg"
+      >
+        {{ openedCouncilName }} opened in a new tab
+      </div>
+    </Transition>
+
     <main class="max-w-3xl mx-auto px-4 sm:px-6 py-8">
       <div class="flex items-center justify-between mb-6">
         <div>
@@ -37,7 +54,7 @@
             <div class="flex gap-2 flex-shrink-0">
               <a
                 v-if="c.registered"
-                :href="c.api_url + '/frontend/'"
+                :href="c.api_url + '/frontend/dashboard'"
                 target="_blank"
                 class="px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
               >
@@ -56,10 +73,10 @@
 
           <!-- Registered: quick links -->
           <div v-if="c.registered" class="mt-3 pt-3 border-t border-gray-100 flex gap-4">
-            <a :href="c.api_url + '/frontend/'" target="_blank" class="text-xs text-blue-600 hover:underline">
+            <a :href="c.api_url + '/frontend/request/new'" target="_blank" class="text-xs text-blue-600 hover:underline">
               New application →
             </a>
-            <a :href="c.api_url + '/frontend/account/profile'" target="_blank" class="text-xs text-blue-600 hover:underline">
+            <a :href="c.api_url + '/frontend/applicant/profile'" target="_blank" class="text-xs text-blue-600 hover:underline">
               Your profile →
             </a>
           </div>
@@ -77,6 +94,7 @@ import { apiClient } from '@/services/api/base'
 const councils = ref([])
 const loading = ref(true)
 const registering = ref(null)
+const openedCouncilName = ref(null)
 
 async function registerWithCouncil(council) {
   registering.value = council.council_code
@@ -87,7 +105,9 @@ async function registerWithCouncil(council) {
     )
     if (result && result.auto_login_url) {
       window.open(result.auto_login_url, '_blank')
-      // Refresh after a short delay so the "Registered" badge appears
+      // Show toast and refresh so the "Registered" badge appears
+      openedCouncilName.value = council.council_name
+      setTimeout(() => { openedCouncilName.value = null }, 4000)
       setTimeout(() => loadCouncils(), 2000)
     }
   } catch (e) {
