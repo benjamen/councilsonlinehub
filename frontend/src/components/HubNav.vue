@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-30">
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-30">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
       <div class="flex items-center justify-between h-16">
 
