@@ -44,7 +44,8 @@ const AO_TOKEN_KEY = 'pending_ao_token'
 const AO_COUNCIL_KEY = 'pending_ao_council'
 
 function go() {
-  window.location.href = getRegisterUrl('Applicant', 'NZ')
+  const userType = route.query.user_type === 'Agent' ? 'Agent' : 'Applicant'
+  window.location.href = getRegisterUrl(userType, 'NZ')
 }
 
 onMounted(() => {
