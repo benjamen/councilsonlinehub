@@ -43,9 +43,22 @@ const PENDING_KEY = 'pending_council_code'
 const AO_TOKEN_KEY = 'pending_ao_token'
 const AO_COUNCIL_KEY = 'pending_ao_council'
 
-function go() {
+let cachedSiteUrl = ''
+
+async function fetchSiteUrl() {
+  if (cachedSiteUrl) return cachedSiteUrl
+  try {
+    const resp = await fetch('/api/method/councilsonlinehub.api.hub.get_hub_config')
+    const data = await resp.json()
+    cachedSiteUrl = data?.message?.site_url || ''
+  } catch (_) { /* fall back to window.location.origin */ }
+  return cachedSiteUrl
+}
+
+async function go() {
   const userType = route.query.user_type === 'Agent' ? 'Agent' : 'Applicant'
-  window.location.href = getRegisterUrl(userType, 'NZ')
+  const siteUrl = await fetchSiteUrl()
+  window.location.href = getRegisterUrl(userType, 'NZ', siteUrl)
 }
 
 onMounted(() => {

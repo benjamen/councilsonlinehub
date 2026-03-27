@@ -36,38 +36,40 @@ function getRealmConfig(countryCode = 'PH') {
 }
 
 /** Generate a minimal Frappe-compatible OAuth2 state token */
-function generateState(redirectTo = '') {
+function generateState(redirectTo = '', siteUrl = '') {
   const state = {
-    site: window.location.origin,
+    site: siteUrl || window.location.origin,
     token: Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2),
     redirect_to: redirectTo,
   }
   return btoa(JSON.stringify(state))
 }
 
-function buildUrl(endpoint, countryCode, extra = {}) {
+function buildUrl(endpoint, countryCode, extra = {}, siteUrl = '') {
   const { realm, clientId, provider } = getRealmConfig(countryCode)
   const base        = `${KC_HOST}/realms/${realm}`
-  const redirectUri = `${window.location.origin}/api/method/frappe.integrations.oauth2_logins.custom/${provider}`
+  // Use server-configured siteUrl when available to avoid 127.0.0.1/hostname mismatch in dev
+  const origin      = siteUrl || window.location.origin
+  const redirectUri = `${origin}/api/method/frappe.integrations.oauth2_logins.custom/${provider}`
   const params = new URLSearchParams({
     client_id:     clientId,
     response_type: 'code',
     scope:         SCOPE,
     redirect_uri:  redirectUri,
-    state:         generateState('/frontend/hub/dashboard'),
+    state:         generateState('/frontend/hub/dashboard', siteUrl),
     ...extra,
   })
   return `${base}${endpoint}?${params.toString()}`
 }
 
 /** Redirects the browser to the Keycloak login page */
-export function getLoginUrl(countryCode = 'PH') {
-  return buildUrl('/protocol/openid-connect/auth', countryCode)
+export function getLoginUrl(countryCode = 'PH', siteUrl = '') {
+  return buildUrl('/protocol/openid-connect/auth', countryCode, {}, siteUrl)
 }
 
 /** Redirects to Keycloak registration, optionally pre-hinting user type */
-export function getRegisterUrl(userType, countryCode = 'PH') {
+export function getRegisterUrl(userType, countryCode = 'PH', siteUrl = '') {
   return buildUrl('/protocol/openid-connect/registrations', countryCode, {
     login_hint: userType,
-  })
+  }, siteUrl)
 }

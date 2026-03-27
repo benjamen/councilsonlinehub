@@ -24,7 +24,13 @@
 <script setup>
 import { getLoginUrl } from '@/constants/keycloak'
 
-function loginWithSSO() {
-  window.location.href = getLoginUrl('NZ')
+async function loginWithSSO() {
+  let siteUrl = ''
+  try {
+    const resp = await fetch('/api/method/councilsonlinehub.api.hub.get_hub_config')
+    const data = await resp.json()
+    siteUrl = data?.message?.site_url || ''
+  } catch (_) { /* fall back to window.location.origin */ }
+  window.location.href = getLoginUrl('NZ', siteUrl)
 }
 </script>

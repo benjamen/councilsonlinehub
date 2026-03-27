@@ -1331,3 +1331,14 @@ def get_platform_stats():
         "total_requests": total_requests,
     }
     return {"status": "ok"}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_hub_config():
+    """Return hub site config needed by the frontend before login.
+    Used to get the server-configured site_url for building Keycloak redirect_uri,
+    avoiding the 127.0.0.1 vs registered hostname mismatch in dev environments.
+    """
+    return {
+        "site_url": frappe.utils.get_url().rstrip("/"),
+    }
