@@ -64,7 +64,7 @@ function buildUrl(endpoint, countryCode, extra = {}, siteUrl = '') {
 
 /** Redirects the browser to the Keycloak login page */
 export function getLoginUrl(countryCode = 'PH', siteUrl = '') {
-  return buildUrl('/protocol/openid-connect/auth', countryCode, {}, siteUrl)
+  return buildUrl('/protocol/openid-connect/auth', countryCode, { prompt: 'login' }, siteUrl)
 }
 
 /** Redirects to Keycloak registration, optionally pre-hinting user type */
