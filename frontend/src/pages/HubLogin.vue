@@ -1,12 +1,18 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+  <div class="min-h-screen bg-gradient-to-br from-brand to-brand-teal flex items-center justify-center px-4">
     <div class="w-full max-w-sm">
+
+      <!-- Logo & header -->
       <div class="text-center mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">CouncilsOnline Portal</h1>
-        <p class="text-sm text-gray-500 mt-1">Sign in to manage your applications across all councils</p>
+        <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-lg mb-4 overflow-hidden p-2">
+          <img src="/councilsonline-icon.png" alt="CouncilsOnline" class="w-full h-full object-contain" />
+        </div>
+        <h1 class="text-2xl font-bold text-white">CouncilsOnline Portal</h1>
+        <p class="text-sm text-white/70 mt-1">Sign in to manage your applications across all councils</p>
       </div>
 
-      <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+      <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-xl">
+
         <!-- SSO error notice -->
         <div v-if="ssoError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm">
           <p class="text-red-700 font-medium text-xs">Sign-in failed</p>
@@ -21,7 +27,7 @@
           <div class="flex gap-2 mt-3">
             <button
               @click="goToDashboard"
-              class="flex-1 py-1.5 px-3 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 transition-colors"
+              class="flex-1 py-1.5 px-3 bg-brand text-white rounded text-xs font-medium hover:bg-brand-hover transition-colors"
             >
               Go to Dashboard
             </button>
@@ -39,7 +45,7 @@
           v-else
           @click="loginWithSSO"
           :disabled="loading"
-          class="w-full py-2.5 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+          class="w-full py-2.5 px-4 bg-brand text-white rounded-lg text-sm font-medium hover:bg-brand-hover transition-colors disabled:opacity-50"
         >
           {{ loading ? 'Redirecting…' : 'Sign in with Keycloak SSO' }}
         </button>
@@ -48,6 +54,8 @@
           You will be redirected to our secure identity portal.
         </p>
       </div>
+
+      <p class="text-center text-xs text-white/50 mt-6">© CouncilsOnline. All rights reserved.</p>
     </div>
   </div>
 </template>
@@ -106,7 +114,6 @@ async function signOutAndLogin() {
 }
 
 onMounted(() => {
-  // Check if redirected back from Keycloak with an error
   const params = new URLSearchParams(window.location.search)
   const errCode = params.get('error')
   const errDesc = params.get('error_description')

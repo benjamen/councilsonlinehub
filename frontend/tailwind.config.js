@@ -10,22 +10,17 @@ export default {
 	theme: {
 		extend: {
 			colors: {
-				// Dynamic brand colors using CSS variables
+				// CouncilsOnline brand colours (fixed — hub has no dynamic theming)
 				brand: {
-					DEFAULT: 'var(--color-primary)',
-					hover: 'var(--color-primary-hover)',
-					light: 'var(--color-primary-light)',
-					dark: 'var(--color-primary-dark)',
+					DEFAULT: '#1B3A72',
+					hover:   '#15305e',
+					light:   '#dde6f5',
+					dark:    '#0f2147',
 				},
-				'brand-secondary': {
-					DEFAULT: 'var(--color-secondary)',
-					hover: 'var(--color-secondary-hover)',
-					light: 'var(--color-secondary-light)',
-				},
-				'brand-accent': {
-					DEFAULT: 'var(--color-accent)',
-					hover: 'var(--color-accent-hover)',
-					light: 'var(--color-accent-light)',
+				'brand-teal': {
+					DEFAULT: '#00B4D8',
+					hover:   '#0096b7',
+					light:   '#cdf0fa',
 				},
 			},
 		},
