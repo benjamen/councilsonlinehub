@@ -17,135 +17,6 @@
   <div v-else class="min-h-screen bg-gray-50">
     <HubNav />
 
-    <!-- ═══════════════════════════════════════════════════════════════
-         NEW USER — landing page experience (no councils yet)
-    ════════════════════════════════════════════════════════════════ -->
-    <template v-if="isNewUser">
-
-      <!-- Hero - flat header -->
-      <div class="bg-white border-b border-gray-200">
-        <div class="max-w-5xl mx-auto px-6 py-10">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="w-8 h-8 rounded bg-brand flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3M9 7h1m-1 4h1m4-4h1m-1 4h1M9 21v-3.5a.5.5 0 01.5-.5h5a.5.5 0 01.5.5V21"/>
-              </svg>
-            </div>
-            <span class="font-bold text-gray-900 text-lg">CouncilsOnline</span>
-          </div>
-
-          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome, {{ firstName }}</h1>
-          <p class="text-gray-500 text-sm sm:text-base max-w-2xl mb-7">
-            Submit building consents, resource applications and more — managed in one place across every participating New Zealand council.
-          </p>
-
-          <div class="flex flex-wrap gap-3">
-            <router-link to="/hub/councils"
-              class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white font-semibold text-sm rounded hover:bg-brand-hover transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3"/>
-              </svg>
-              Register with a Council
-            </router-link>
-            <router-link to="/hub/profile"
-              class="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 font-semibold text-sm rounded hover:bg-gray-50 transition-colors">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-              Complete Your Profile
-            </router-link>
-          </div>
-
-          <!-- Stats row -->
-          <div class="flex flex-wrap items-center gap-x-8 gap-y-2 mt-7 pt-6 border-t border-gray-100">
-            <div v-for="feat in features" :key="feat.label">
-              <div class="text-lg font-bold text-gray-900">{{ feat.value }}</div>
-              <div class="text-xs text-gray-500 mt-0.5">{{ feat.label }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Profile completeness banner (if profile incomplete) -->
-      <div v-if="!profileLoading && profileCompletion.pct < 100"
-        class="bg-amber-50 border-b border-amber-200">
-        <div class="max-w-5xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-amber-900">Your profile is {{ profileCompletion.pct }}% complete</p>
-              <p class="text-xs text-amber-700 mt-0.5">
-                Missing: {{ profileCompletion.missing.join(', ') }}
-              </p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 flex-shrink-0">
-            <div class="w-32 bg-amber-200 rounded-full h-2">
-              <div class="bg-amber-500 h-2 rounded-full transition-all" :style="`width:${profileCompletion.pct}%`"></div>
-            </div>
-            <router-link to="/hub/profile"
-              class="px-4 py-1.5 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-600 transition-colors whitespace-nowrap">
-              Complete Now
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-      <!-- How it works -->
-      <div class="max-w-5xl mx-auto px-6 py-16 sm:py-20">
-        <div class="text-center mb-12">
-          <p class="text-xs font-bold text-brand uppercase tracking-widest mb-3">Simple from day one</p>
-          <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">How CouncilsOnline works</h2>
-          <p class="text-gray-500 text-sm mt-2 max-w-lg mx-auto">Three steps to submit your first application — no paperwork, no in-person visits required.</p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-          <div v-for="(step, i) in onboardingSteps" :key="i"
-            class="bg-white rounded-lg border border-gray-200 p-5">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold text-white" :class="step.numBg">
-                {{ i + 1 }}
-              </span>
-              <div class="w-8 h-8 rounded flex items-center justify-center" :class="step.iconBg">
-                <svg class="w-4 h-4" :class="step.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="step.icon"/>
-                </svg>
-              </div>
-            </div>
-            <h3 class="text-sm font-semibold text-gray-900 mb-1">{{ step.title }}</h3>
-            <p class="text-xs text-gray-500 leading-relaxed">{{ step.desc }}</p>
-          </div>
-        </div>
-
-        <!-- CTA strip -->
-        <div class="border border-brand-light bg-brand-light/30 rounded-lg p-6 sm:p-8">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h3 class="text-base font-bold text-gray-900 mb-1">Ready to register with a council?</h3>
-              <p class="text-gray-500 text-sm">Browse participating councils and connect your account in seconds.</p>
-            </div>
-            <router-link to="/hub/councils"
-              class="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white font-semibold text-sm rounded hover:bg-brand-hover transition-colors whitespace-nowrap">
-              Browse Councils
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-              </svg>
-            </router-link>
-          </div>
-        </div>
-      </div>
-    </template>
-
-    <!-- ═══════════════════════════════════════════════════════════════
-         RETURNING USER — dashboard
-    ════════════════════════════════════════════════════════════════ -->
-    <template v-else>
-
       <!-- Page header - flat -->
       <div class="bg-white border-b border-gray-200">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
@@ -269,14 +140,27 @@
                 </div>
               </div>
 
-              <!-- Empty with applications but filtered to zero -->
+              <!-- Empty state -->
               <div v-else-if="!displayedRequests.length" class="px-6 py-12 text-center">
                 <svg class="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
-                <p class="text-sm font-medium text-gray-700">No applications found</p>
-                <p class="text-xs text-gray-400 mt-1">{{ filterCouncil || filterStatus || filterText ? 'Try clearing your filters' : '' }}</p>
+                <template v-if="filterCouncil || filterStatus || filterText">
+                  <p class="text-sm font-medium text-gray-700">No applications match your filters</p>
+                  <p class="text-xs text-gray-400 mt-1">Try clearing your filters</p>
+                </template>
+                <template v-else>
+                  <p class="text-sm font-medium text-gray-700">No applications yet</p>
+                  <p class="text-xs text-gray-400 mt-1 mb-4">Register with a council to start submitting applications</p>
+                  <router-link to="/hub/councils"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white text-sm font-semibold rounded hover:bg-brand-hover transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3"/>
+                    </svg>
+                    Register with a Council
+                  </router-link>
+                </template>
               </div>
 
               <!-- List -->
@@ -514,7 +398,6 @@
           </div>
         </div>
       </div>
-    </template>
 
     <!-- Quote Submission Modal -->
     <div v-if="showQuoteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
