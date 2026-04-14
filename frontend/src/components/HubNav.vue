@@ -84,6 +84,10 @@ const pendingQuoteCount = ref(0)
 const isSystemManager = ref(false)
 
 onMounted(async () => {
+  // Detect System Manager from boot data — no API call, no 403 traceback
+  const bootRoles = window?.frappe?.boot?.user?.roles || []
+  isSystemManager.value = bootRoles.includes('System Manager')
+
   try {
     const profile = await apiClient.call('councilsonlinehub.api.hub.get_hub_profile')
     userRole.value = (profile?.user_role || '').toLowerCase()
@@ -92,14 +96,6 @@ onMounted(async () => {
     if (isAgentUser.value) {
       const quotes = await apiClient.call('councilsonlinehub.api.hub.get_agent_quote_requests')
       pendingQuoteCount.value = (quotes || []).filter(q => q.status === 'Invited').length
-    }
-
-    // Check for System Manager by attempting admin endpoint
-    try {
-      await apiClient.call('councilsonlinehub.api.hub.get_council_registry_all')
-      isSystemManager.value = true
-    } catch {
-      isSystemManager.value = false
     }
   } catch {
     // ignore — nav degrades gracefully
