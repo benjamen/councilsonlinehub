@@ -35,14 +35,14 @@
             v-model="searchQuery"
             type="text"
             placeholder="Search agents by name or specialty..."
-            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand focus:border-transparent text-sm"
             @input="debouncedSearch"
           />
         </div>
         <select
           v-if="filterOptions.services.length"
           v-model="selectedService"
-          class="px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+          class="px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand text-sm"
           @change="loadAgents"
         >
           <option value="">All Services</option>
@@ -51,7 +51,7 @@
         <select
           v-if="filterOptions.areas.length"
           v-model="selectedArea"
-          class="px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+          class="px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand text-sm"
           @change="loadAgents"
         >
           <option value="">All Areas</option>
@@ -130,7 +130,7 @@
             <!-- Services tags -->
             <div v-if="agent.services?.length" class="flex flex-wrap gap-1.5 mb-3">
               <span v-for="svc in agent.services.slice(0, 3)" :key="svc"
-                class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                class="px-2 py-0.5 rounded-full text-xs font-medium bg-brand-light/30 text-brand">
                 {{ svc }}
               </span>
               <span v-if="agent.services.length > 3" class="text-xs text-gray-400">+{{ agent.services.length - 3 }} more</span>

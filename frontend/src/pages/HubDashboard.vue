@@ -2,13 +2,13 @@
   <!-- ── Provisioning: seamless redirect spinner ──────────────────────── -->
   <div v-if="provisioning" class="min-h-screen bg-gray-50 flex items-center justify-center">
     <div class="text-center">
-      <div class="inline-flex items-center justify-center w-12 h-12 rounded bg-blue-600 mb-5">
+      <div class="inline-flex items-center justify-center w-12 h-12 rounded bg-brand mb-5">
         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3M9 7h1m-1 4h1m4-4h1m-1 4h1M9 21v-3.5a.5.5 0 01.5-.5h5a.5.5 0 01.5.5V21"/>
         </svg>
       </div>
-      <div class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+      <div class="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
       <p class="text-gray-900 font-semibold text-sm">Setting up your council access…</p>
       <p class="text-gray-500 text-xs mt-1">You will be redirected automatically</p>
     </div>
@@ -26,7 +26,7 @@
       <div class="bg-white border-b border-gray-200">
         <div class="max-w-5xl mx-auto px-6 py-10">
           <div class="flex items-center gap-3 mb-6">
-            <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center">
+            <div class="w-8 h-8 rounded bg-brand flex items-center justify-center">
               <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3M9 7h1m-1 4h1m4-4h1m-1 4h1M9 21v-3.5a.5.5 0 01.5-.5h5a.5.5 0 01.5.5V21"/>
@@ -42,7 +42,7 @@
 
           <div class="flex flex-wrap gap-3">
             <router-link to="/hub/councils"
-              class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded hover:bg-blue-700 transition-colors">
+              class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white font-semibold text-sm rounded hover:bg-brand-hover transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3"/>
               </svg>
@@ -99,7 +99,7 @@
       <!-- How it works -->
       <div class="max-w-5xl mx-auto px-6 py-16 sm:py-20">
         <div class="text-center mb-12">
-          <p class="text-xs font-bold text-blue-600 uppercase tracking-widest mb-3">Simple from day one</p>
+          <p class="text-xs font-bold text-brand uppercase tracking-widest mb-3">Simple from day one</p>
           <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">How CouncilsOnline works</h2>
           <p class="text-gray-500 text-sm mt-2 max-w-lg mx-auto">Three steps to submit your first application — no paperwork, no in-person visits required.</p>
         </div>
@@ -123,14 +123,14 @@
         </div>
 
         <!-- CTA strip -->
-        <div class="border border-blue-200 bg-blue-50 rounded-lg p-6 sm:p-8">
+        <div class="border border-brand-light bg-brand-light/30 rounded-lg p-6 sm:p-8">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h3 class="text-base font-bold text-gray-900 mb-1">Ready to register with a council?</h3>
               <p class="text-gray-500 text-sm">Browse participating councils and connect your account in seconds.</p>
             </div>
             <router-link to="/hub/councils"
-              class="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded hover:bg-blue-700 transition-colors whitespace-nowrap">
+              class="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white font-semibold text-sm rounded hover:bg-brand-hover transition-colors whitespace-nowrap">
               Browse Councils
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -152,7 +152,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-center gap-3">
               <!-- Avatar -->
-              <div class="w-10 h-10 rounded bg-blue-600 flex items-center justify-center flex-shrink-0">
+              <div class="w-10 h-10 rounded bg-brand flex items-center justify-center flex-shrink-0">
                 <span class="text-sm font-bold text-white">{{ initials }}</span>
               </div>
               <div>
@@ -172,7 +172,7 @@
 
             <div class="flex gap-2 flex-shrink-0">
               <a v-if="firstCouncilUrl" :href="firstCouncilUrl" target="_blank"
-                class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded hover:bg-blue-700 transition-colors">
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-brand text-white text-sm font-semibold rounded hover:bg-brand-hover transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -239,19 +239,19 @@
 
               <div v-if="showFilters" class="flex flex-wrap gap-2 px-6 py-3 bg-gray-50 border-b border-gray-100">
                 <select v-model="filterCouncil"
-                  class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-brand focus:border-brand">
                   <option value="">All Councils</option>
                   <option v-for="c in councilOptions" :key="c" :value="c">{{ c }}</option>
                 </select>
                 <select v-model="filterStatus"
-                  class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-brand focus:border-brand">
                   <option value="">All Statuses</option>
                   <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
                 </select>
                 <input v-model="filterText" type="text" placeholder="Search applications…"
-                  class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm flex-1 min-w-36 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"/>
+                  class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm flex-1 min-w-36 focus:ring-2 focus:ring-brand focus:border-brand"/>
                 <button @click="loadRequests" :disabled="requestsLoading"
-                  class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                  class="px-3 py-1.5 bg-brand text-white text-sm rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors">
                   Refresh
                 </button>
               </div>
@@ -286,7 +286,7 @@
                   class="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors group">
                   <div class="w-2 h-2 rounded-full flex-shrink-0 mt-0.5" :class="statusDot(req.workflow_state)"></div>
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-blue-600 group-hover:text-blue-700 truncate">
+                    <p class="text-sm font-semibold text-brand group-hover:text-brand truncate">
                       {{ req.request_number }}
                       <span class="text-gray-300 font-normal mx-1">·</span>
                       <span class="text-gray-600 font-normal">{{ req.request_type || 'Application' }}</span>
@@ -298,7 +298,7 @@
                   </span>
                   <span class="flex-shrink-0 text-xs text-gray-400 hidden sm:block">{{ formatDate(req.submitted_date) }}</span>
                   <button @click="openMessages(req, $event)"
-                    class="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    class="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-brand hover:bg-brand-light/30 transition-colors"
                     title="View / send messages">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -314,7 +314,7 @@
               <div v-if="!requestsLoading && filteredRequests.length > 10"
                 class="px-6 py-3 border-t border-gray-100 flex items-center justify-between">
                 <p class="text-xs text-gray-400">Showing {{ displayedRequests.length }} of {{ filteredRequests.length }}</p>
-                <button @click="showAll = !showAll" class="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                <button @click="showAll = !showAll" class="text-xs text-brand hover:text-brand font-medium">
                   {{ showAll ? 'Show less' : `Show all ${filteredRequests.length}` }}
                 </button>
               </div>
@@ -329,7 +329,7 @@
               <h3 class="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
               <div class="space-y-2">
                 <a v-if="firstCouncilUrl" :href="firstCouncilUrl" target="_blank"
-                  class="flex items-center gap-3 px-3 py-2.5 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors group">
+                  class="flex items-center gap-3 px-3 py-2.5 rounded bg-brand text-white hover:bg-brand-hover transition-colors group">
                   <div class="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -342,8 +342,8 @@
                 </a>
                 <router-link to="/hub/councils"
                   class="flex items-center gap-3 px-3 py-2.5 rounded hover:bg-gray-50 border border-gray-200 transition-colors group">
-                  <div class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div class="w-7 h-7 rounded-lg bg-brand-light/30 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3"/>
                     </svg>
                   </div>
@@ -386,12 +386,12 @@
               </div>
               <div v-else-if="profile">
                 <div class="flex items-start gap-3 mb-3">
-                  <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                  <div class="w-10 h-10 rounded-full bg-brand flex items-center justify-center flex-shrink-0">
                     <span class="text-sm font-bold text-white">{{ initials }}</span>
                   </div>
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-gray-900 truncate">{{ fullName }}</p>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 mt-1">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-brand-light/30 text-brand mt-1">
                       {{ profile.business_type || 'Agent' }}
                     </span>
                   </div>
@@ -434,7 +434,7 @@
                     {{ quoteRequests.filter(q => q.status === 'Invited').length }} new
                   </span>
                   <router-link to="/hub/my-quotes"
-                    class="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                    class="text-xs text-brand hover:text-brand font-medium">
                     History →
                   </router-link>
                 </div>
@@ -460,7 +460,7 @@
                   </div>
                   <div v-if="quote.status === 'Invited'" class="flex gap-1.5">
                     <button @click="openQuoteModal(quote)"
-                      class="flex-1 px-2.5 py-1 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                      class="flex-1 px-2.5 py-1 bg-brand text-white text-xs font-medium rounded-lg hover:bg-brand-hover transition-colors">
                       Quote
                     </button>
                     <button @click="declineQuote(quote)"
@@ -473,7 +473,7 @@
                   </div>
                 </div>
                 <router-link v-if="quoteRequests.length > 4" to="/hub/my-quotes"
-                  class="block text-xs text-blue-600 hover:text-blue-700 text-center pt-1 font-medium">
+                  class="block text-xs text-brand hover:text-brand text-center pt-1 font-medium">
                   +{{ quoteRequests.length - 4 }} more — View all
                 </router-link>
               </div>
@@ -483,7 +483,7 @@
             <div class="bg-white rounded-lg border border-gray-200 p-5">
               <div class="flex items-center justify-between mb-3">
                 <h3 class="text-sm font-semibold text-gray-900">Your Councils</h3>
-                <router-link to="/hub/councils" class="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                <router-link to="/hub/councils" class="text-xs text-brand hover:text-brand font-medium">
                   Manage →
                 </router-link>
               </div>
@@ -492,19 +492,19 @@
               </div>
               <div v-else-if="registeredCouncils.length === 0" class="text-center py-4">
                 <p class="text-xs text-gray-400 mb-2">No councils yet</p>
-                <router-link to="/hub/councils" class="text-xs font-semibold text-blue-600 hover:text-blue-700">
+                <router-link to="/hub/councils" class="text-xs font-semibold text-brand hover:text-brand">
                   + Add a council
                 </router-link>
               </div>
               <div v-else class="space-y-1">
                 <a v-for="council in registeredCouncils.slice(0, 5)" :key="council.name"
                   :href="council.url + '/frontend/'" target="_blank"
-                  class="flex items-center justify-between px-3 py-2 rounded hover:bg-blue-50 transition-colors group">
+                  class="flex items-center justify-between px-3 py-2 rounded hover:bg-brand-light/30 transition-colors group">
                   <div class="flex items-center gap-2 min-w-0">
                     <div class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
-                    <span class="text-sm text-gray-700 truncate group-hover:text-blue-700">{{ council.name }}</span>
+                    <span class="text-sm text-gray-700 truncate group-hover:text-brand">{{ council.name }}</span>
                   </div>
-                  <span class="text-xs text-blue-400 group-hover:text-blue-600 flex-shrink-0 ml-2">Open →</span>
+                  <span class="text-xs text-brand/60 group-hover:text-brand flex-shrink-0 ml-2">Open →</span>
                 </a>
                 <p v-if="registeredCouncils.length > 5" class="text-xs text-gray-400 px-3 pt-1">
                   +{{ registeredCouncils.length - 5 }} more
@@ -525,22 +525,22 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Fee Estimate ($) <span class="text-red-500">*</span></label>
             <input type="number" v-model="quoteForm.feeEstimate" step="0.01" min="0"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Timeline (working days) <span class="text-red-500">*</span></label>
             <input type="number" v-model="quoteForm.estimatedDays" min="1"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Cover Note</label>
             <textarea v-model="quoteForm.coverNote" rows="3" placeholder="Describe your experience and approach..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand"></textarea>
           </div>
         </div>
         <div class="flex gap-3 mt-5">
           <button @click="submitQuote" :disabled="submittingQuote || !quoteForm.feeEstimate || !quoteForm.estimatedDays"
-            class="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 disabled:opacity-50 transition-colors">
+            class="flex-1 px-4 py-2.5 bg-brand text-white text-sm font-medium rounded hover:bg-brand-hover disabled:opacity-50 transition-colors">
             {{ submittingQuote ? 'Submitting…' : 'Submit Quote' }}
           </button>
           <button @click="showQuoteModal = false"
@@ -666,9 +666,9 @@ async function declineQuote(quote) {
 
 const onboardingSteps = [
   {
-    numBg: 'bg-blue-600',
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-600',
+    numBg: 'bg-brand',
+    iconBg: 'bg-brand-light/30',
+    iconColor: 'text-brand',
     icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3',
     title: 'Register with a Council',
     desc: 'Browse participating councils and register once to gain access. Your profile data is shared automatically.',
@@ -798,7 +798,7 @@ function statusClass(state) {
   if (!state) return 'bg-gray-100 text-gray-600'
   if (['Approved','Granted'].includes(state))          return 'bg-green-100 text-green-700'
   if (['Declined','Withdrawn'].includes(state))        return 'bg-red-100 text-red-700'
-  if (['Submitted','Under Review','Processing'].includes(state)) return 'bg-blue-100 text-blue-700'
+  if (['Submitted','Under Review','Processing'].includes(state)) return 'bg-brand-light text-brand'
   return 'bg-amber-100 text-amber-700'
 }
 
@@ -806,7 +806,7 @@ function statusDot(state) {
   if (!state) return 'bg-gray-300'
   if (['Approved','Granted'].includes(state))          return 'bg-green-500'
   if (['Declined','Withdrawn'].includes(state))        return 'bg-red-400'
-  if (['Submitted','Under Review','Processing'].includes(state)) return 'bg-blue-500'
+  if (['Submitted','Under Review','Processing'].includes(state)) return 'bg-brand-light/300'
   return 'bg-amber-400'
 }
 

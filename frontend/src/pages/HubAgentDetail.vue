@@ -4,7 +4,7 @@
 
     <!-- Loading -->
     <div v-if="loading" class="flex justify-center py-20">
-      <div class="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div class="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin"></div>
     </div>
 
     <main v-else-if="agent" class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
@@ -69,7 +69,7 @@
         <!-- Invite to Quote -->
         <div v-if="session.user && session.user !== 'Guest'" class="mt-6 pt-6 border-t border-gray-100">
           <button @click="openInviteModal"
-            class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
+            class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand text-white text-sm font-semibold rounded-xl hover:bg-brand-hover transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -82,15 +82,15 @@
         <div class="mt-6 pt-6 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div v-if="agent.contact_email">
             <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Email</p>
-            <a :href="'mailto:' + agent.contact_email" class="text-sm text-blue-600 hover:underline">{{ agent.contact_email }}</a>
+            <a :href="'mailto:' + agent.contact_email" class="text-sm text-brand hover:underline">{{ agent.contact_email }}</a>
           </div>
           <div v-if="agent.contact_phone">
             <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Phone</p>
-            <a :href="'tel:' + agent.contact_phone" class="text-sm text-blue-600 hover:underline">{{ agent.contact_phone }}</a>
+            <a :href="'tel:' + agent.contact_phone" class="text-sm text-brand hover:underline">{{ agent.contact_phone }}</a>
           </div>
           <div v-if="agent.website">
             <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Website</p>
-            <a :href="agent.website" target="_blank" rel="noopener" class="text-sm text-blue-600 hover:underline">{{ agent.website }}</a>
+            <a :href="agent.website" target="_blank" rel="noopener" class="text-sm text-brand hover:underline">{{ agent.website }}</a>
           </div>
         </div>
       </div>
@@ -101,7 +101,7 @@
           <h3 class="text-sm font-semibold text-gray-700 mb-3">Services</h3>
           <div class="flex flex-wrap gap-2">
             <span v-for="svc in agent.services" :key="svc.service_name"
-              class="px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700">
+              class="px-3 py-1 rounded-full text-sm bg-brand-light/30 text-brand">
               {{ svc.service_name }}
             </span>
           </div>
@@ -145,7 +145,7 @@
     <!-- Not found -->
     <div v-else class="text-center py-20">
       <p class="text-gray-500">Agent profile not found</p>
-      <router-link to="/hub/agents" class="mt-4 inline-block text-sm text-blue-600 hover:underline">
+      <router-link to="/hub/agents" class="mt-4 inline-block text-sm text-brand hover:underline">
         Back to Marketplace
       </router-link>
     </div>
@@ -164,7 +164,7 @@
           </div>
           <p class="text-sm font-semibold text-gray-900">Invite sent!</p>
           <p class="text-xs text-gray-500 mt-1">{{ agent?.display_name }} will be notified to submit a quote.</p>
-          <button @click="showInviteModal = false" class="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors">
+          <button @click="showInviteModal = false" class="mt-4 px-4 py-2 bg-brand text-white text-sm font-medium rounded-xl hover:bg-brand-hover transition-colors">
             Done
           </button>
         </div>
@@ -179,8 +179,8 @@
           <div v-else class="space-y-2 mb-4 max-h-56 overflow-y-auto">
             <label v-for="req in myRequests" :key="req.name"
               class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors"
-              :class="selectedRequest?.name === req.name ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'">
-              <input type="radio" :value="req" v-model="selectedRequest" class="text-blue-600" />
+              :class="selectedRequest?.name === req.name ? 'border-blue-500 bg-brand-light/30' : 'border-gray-200 hover:border-gray-300'">
+              <input type="radio" :value="req" v-model="selectedRequest" class="text-brand" />
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-semibold text-gray-800 truncate">{{ req.request_number }}</p>
                 <p class="text-xs text-gray-500 truncate">{{ req.request_type }} — {{ req.council_name }}</p>
@@ -192,7 +192,7 @@
 
           <div class="flex gap-3">
             <button @click="sendInvite" :disabled="inviting || !selectedRequest"
-              class="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors">
+              class="flex-1 px-4 py-2.5 bg-brand text-white text-sm font-medium rounded-xl hover:bg-brand-hover disabled:opacity-50 transition-colors">
               {{ inviting ? 'Sending…' : 'Send Invite' }}
             </button>
             <button @click="showInviteModal = false"

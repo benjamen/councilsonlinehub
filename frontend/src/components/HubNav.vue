@@ -1,17 +1,16 @@
 <template>
-  <header class="bg-white border-b border-gray-200 sticky top-0 z-30">
+  <header class="bg-brand shadow-sm border-b border-brand-dark sticky top-0 z-30">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
       <div class="flex items-center justify-between h-16">
 
         <!-- Logo + brand -->
-        <router-link to="/hub/dashboard" class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
+        <router-link to="/hub/dashboard" class="flex items-center gap-3">
+          <div class="bg-white rounded-md px-2 py-1 flex items-center justify-center">
+            <img src="/councilsonline_logo.png"
+                 alt="CouncilsOnline"
+                 class="h-6 w-auto" />
           </div>
-          <span class="font-semibold text-gray-900 text-base">CouncilsOnline Portal</span>
+          <span class="font-semibold text-white text-base hidden sm:block">CouncilsOnline Portal</span>
         </router-link>
 
         <!-- Nav links (desktop) -->
@@ -20,27 +19,28 @@
             v-for="item in navItems" :key="item.to"
             :to="item.to"
             class="relative px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-            :class="isActive(item.to) ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'"
+            :class="isActive(item.to)
+              ? 'bg-white/15 text-white'
+              : 'text-white/75 hover:bg-white/10 hover:text-white'"
           >
             {{ item.label }}
             <span v-if="item.badge"
-              class="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+              class="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-white text-[10px] font-bold">
               {{ item.badge > 9 ? '9+' : item.badge }}
             </span>
           </router-link>
         </nav>
 
         <!-- Right side: role badge + user + logout -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
           <span v-if="roleBadge"
-            class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
-            :class="roleBadge.class">
+            class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-brand-teal/20 text-brand-teal">
             {{ roleBadge.label }}
           </span>
-          <span class="hidden sm:block text-sm text-gray-500 max-w-[160px] truncate">{{ userName }}</span>
+          <span class="hidden sm:block text-sm text-white/70 max-w-[160px] truncate">{{ userName }}</span>
           <button
             @click="logout"
-            class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            class="px-3 py-1.5 rounded-lg text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors border border-white/20"
           >
             Sign out
           </button>
@@ -53,11 +53,13 @@
           v-for="item in navItems" :key="item.to"
           :to="item.to"
           class="relative flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-          :class="isActive(item.to) ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'"
+          :class="isActive(item.to)
+            ? 'bg-white/15 text-white'
+            : 'text-white/70 hover:bg-white/10 hover:text-white'"
         >
           {{ item.label }}
           <span v-if="item.badge"
-            class="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+            class="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-white text-[10px] font-bold">
             {{ item.badge > 9 ? '9+' : item.badge }}
           </span>
         </router-link>

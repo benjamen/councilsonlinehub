@@ -4,7 +4,7 @@
     <div class="max-w-3xl mx-auto px-4 sm:px-6 pt-6 flex items-center justify-between">
       <h2 class="text-lg font-semibold text-gray-900">My Profile</h2>
       <button @click="saveProfile" :disabled="saving"
-        class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50">
+        class="px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-brand-hover disabled:opacity-50">
         {{ saving ? 'Saving...' : 'Save Changes' }}
       </button>
     </div>
@@ -12,7 +12,7 @@
     <div v-if="loading" class="flex justify-center py-16 text-sm text-gray-500">Loading...</div>
 
     <main v-else class="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-      <p class="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+      <p class="text-xs text-brand bg-brand-light/30 border border-brand-light rounded-lg px-4 py-2">
         Your profile is automatically synced to each council when you log in for the first time.
       </p>
 
@@ -50,7 +50,7 @@
       <div v-if="showDirectors" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-sm font-semibold text-gray-700">{{ directorsLabel }}</h2>
-          <button @click="addDirector" class="text-sm text-blue-600 hover:text-blue-800 font-medium">+ Add</button>
+          <button @click="addDirector" class="text-sm text-brand hover:text-blue-800 font-medium">+ Add</button>
         </div>
         <div v-for="(d, idx) in directors" :key="idx" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0 last:mb-0">
           <div>
@@ -168,7 +168,7 @@
         <h2 class="text-sm font-semibold text-gray-700 mb-4">Business Specialties</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <label v-for="s in SPECIALTIES" :key="s" class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-            <input type="checkbox" :value="s" v-model="selectedSpecialties" class="rounded text-blue-600" />
+            <input type="checkbox" :value="s" v-model="selectedSpecialties" class="rounded text-brand" />
             {{ s }}
           </label>
         </div>
@@ -185,7 +185,7 @@
             <span class="text-sm text-gray-600">Visible</span>
             <button type="button" @click="agentProfile.is_listed = agentProfile.is_listed ? 0 : 1"
               class="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none"
-              :class="agentProfile.is_listed ? 'bg-blue-600' : 'bg-gray-300'">
+              :class="agentProfile.is_listed ? 'bg-brand' : 'bg-gray-300'">
               <span class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transform transition duration-200"
                 :class="agentProfile.is_listed ? 'translate-x-4' : 'translate-x-0'" />
             </button>
@@ -233,7 +233,7 @@
           <div class="flex items-center justify-between mb-2">
             <label class="text-sm font-medium text-gray-600">Services Offered</label>
             <button @click="addAgentItem('services', 'service_name')"
-              class="text-sm text-blue-600 hover:text-blue-800 font-medium">+ Add</button>
+              class="text-sm text-brand hover:text-blue-800 font-medium">+ Add</button>
           </div>
           <div v-for="(svc, i) in agentProfile.services" :key="i" class="flex gap-2 mb-2">
             <input v-model="agentProfile.services[i]" type="text" placeholder="e.g. Resource Consent"
@@ -253,7 +253,7 @@
           <div class="flex items-center justify-between mb-2">
             <label class="text-sm font-medium text-gray-600">Service Areas</label>
             <button @click="agentProfile.areas.push('')"
-              class="text-sm text-blue-600 hover:text-blue-800 font-medium">+ Add</button>
+              class="text-sm text-brand hover:text-blue-800 font-medium">+ Add</button>
           </div>
           <div v-for="(area, i) in agentProfile.areas" :key="i" class="flex gap-2 mb-2">
             <input v-model="agentProfile.areas[i]" type="text" placeholder="e.g. Northland"

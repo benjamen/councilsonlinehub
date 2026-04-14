@@ -64,7 +64,7 @@
                 v-else
                 @click="registerWithCouncil(c)"
                 :disabled="registering === c.council_code"
-                class="px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                class="px-3 py-2 text-sm font-medium rounded-lg bg-brand text-white hover:bg-brand-hover disabled:opacity-50 transition-colors"
               >
                 {{ registering === c.council_code ? 'Registering…' : 'Register' }}
               </button>
@@ -73,10 +73,10 @@
 
           <!-- Registered: quick links -->
           <div v-if="c.registered" class="mt-3 pt-3 border-t border-gray-100 flex gap-4">
-            <a :href="c.api_url + '/frontend/request/new'" target="_blank" class="text-xs text-blue-600 hover:underline">
+            <a :href="c.api_url + '/frontend/request/new'" target="_blank" class="text-xs text-brand hover:underline">
               New application →
             </a>
-            <a :href="c.api_url + '/frontend/applicant/profile'" target="_blank" class="text-xs text-blue-600 hover:underline">
+            <a :href="c.api_url + '/frontend/applicant/profile'" target="_blank" class="text-xs text-brand hover:underline">
               Your profile →
             </a>
           </div>

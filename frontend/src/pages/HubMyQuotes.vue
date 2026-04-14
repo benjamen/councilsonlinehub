@@ -23,7 +23,7 @@
         <button v-for="f in filters" :key="f.value"
           @click="activeFilter = f.value"
           :class="activeFilter === f.value
-            ? 'bg-blue-600 text-white border-blue-600'
+            ? 'bg-brand text-white border-brand'
             : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'"
           class="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors">
           {{ f.label }}
@@ -84,7 +84,7 @@
             <a v-if="quote.council_url && quote.request"
               :href="`${quote.council_url}/frontend/request/${quote.request}/my-quote`"
               target="_blank"
-              class="text-xs text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1">
+              class="text-xs text-brand hover:text-blue-800 font-medium inline-flex items-center gap-1">
               View quote
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
@@ -132,7 +132,7 @@ const filteredQuotes = computed(() => {
 function statusClass(status) {
   const map = {
     Invited: 'bg-amber-100 text-amber-700',
-    Drafting: 'bg-blue-100 text-blue-700',
+    Drafting: 'bg-brand-light text-brand',
     Quoted: 'bg-green-100 text-green-700',
     Accepted: 'bg-green-100 text-green-800',
     Declined: 'bg-red-100 text-red-600',
