@@ -38,6 +38,11 @@ rm -rf node_modules 2>/dev/null \
   || true
 rm -rf node_modules.bak.* 2>/dev/null || true
 
+# jiti (Tailwind config loader) caches transpiled config in /tmp/node-jiti.
+# If a previous build ran as root, that dir is root-owned and causes EACCES.
+# Remove it so jiti recreates it with frappe-user ownership.
+rm -rf /tmp/node-jiti 2>/dev/null || sudo rm -rf /tmp/node-jiti 2>/dev/null || true
+
 yarn install
 yarn build
 
